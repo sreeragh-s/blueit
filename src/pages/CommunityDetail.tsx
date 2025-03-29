@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
-import ThreadCard from "@/components/ThreadCard";
+import ThreadList from "@/components/ThreadList";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -22,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import EditCommunityDialog from "@/components/EditCommunityDialog";
+import { ThreadWithRelations } from "@/types/supabase";
 
 const CommunityDetail = () => {
   const { communityId } = useParams();
@@ -30,12 +32,13 @@ const CommunityDetail = () => {
   const navigate = useNavigate();
   
   const [community, setCommunity] = useState<any>(null);
-  const [threads, setThreads] = useState([]);
+  const [threads, setThreads] = useState<ThreadWithRelations[]>([]);
   const [isJoined, setIsJoined] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState("threads");
   const [sortOption, setSortOption] = useState("trending");
   const [loading, setLoading] = useState(true);
+  const [threadsLoading, setThreadsLoading] = useState(true);
   const [joiningLoading, setJoiningLoading] = useState(false);
   const [isEditCommunityOpen, setIsEditCommunityOpen] = useState(false);
   
@@ -44,6 +47,12 @@ const CommunityDetail = () => {
       fetchCommunityData();
     }
   }, [communityId, user]);
+  
+  useEffect(() => {
+    if (communityId) {
+      fetchCommunityThreads();
+    }
+  }, [communityId, sortOption]);
   
   const fetchCommunityData = async () => {
     if (!communityId) return;
@@ -81,10 +90,6 @@ const CommunityDetail = () => {
           setIsAdmin(false);
         }
       }
-      
-      // Fetch threads for this community
-      setThreads(sampleThreads);
-      
     } catch (error: any) {
       console.error("Error fetching community:", error);
       toast({
@@ -94,6 +99,148 @@ const CommunityDetail = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const fetchCommunityThreads = async () => {
+    if (!communityId) return;
+    
+    try {
+      setThreadsLoading(true);
+      
+      // Fetch threads for this community
+      const { data: threadsData, error: threadsError } = await supabase
+        .from('threads')
+        .select(`
+          id, 
+          title, 
+          content, 
+          created_at,
+          user_id,
+          community_id
+        `)
+        .eq('community_id', communityId)
+        .order(getSortOrderColumn(), { ascending: sortOption === 'new' ? false : true });
+      
+      if (threadsError) throw threadsError;
+      
+      if (!threadsData || threadsData.length === 0) {
+        setThreads([]);
+        setThreadsLoading(false);
+        return;
+      }
+      
+      // Process threads with proper async handling
+      const processedThreads = await Promise.all(
+        threadsData.map(async (thread) => {
+          // Fetch author
+          const { data: authorData } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url')
+            .eq('id', thread.user_id)
+            .single();
+          
+          // Fetch community
+          const { data: communityData } = await supabase
+            .from('communities')
+            .select('id, name')
+            .eq('id', thread.community_id)
+            .single();
+          
+          // Count upvotes
+          const { count: upvotes } = await supabase
+            .from('votes')
+            .select('id', { count: 'exact' })
+            .eq('thread_id', thread.id)
+            .eq('vote_type', 'up');
+          
+          // Count downvotes
+          const { count: downvotes } = await supabase
+            .from('votes')
+            .select('id', { count: 'exact' })
+            .eq('thread_id', thread.id)
+            .eq('vote_type', 'down');
+          
+          // Count comments
+          const { count: commentCount } = await supabase
+            .from('comments')
+            .select('id', { count: 'exact' })
+            .eq('thread_id', thread.id);
+          
+          // Fetch tags
+          const { data: tagsData } = await supabase
+            .from('thread_tags')
+            .select('tags:tag_id(name)')
+            .eq('thread_id', thread.id);
+          
+          const tags = tagsData?.map(tag => 
+            (tag.tags as any)?.name
+          ).filter(Boolean) || [];
+          
+          return {
+            ...thread,
+            community: {
+              id: communityData?.id || '',
+              name: communityData?.name || 'Unknown'
+            },
+            author: {
+              id: authorData?.id || '',
+              name: authorData?.username || 'Anonymous',
+              avatar: authorData?.avatar_url
+            },
+            votes: ((upvotes || 0) - (downvotes || 0)),
+            commentCount: commentCount || 0,
+            tags: tags
+          } as ThreadWithRelations;
+        })
+      );
+      
+      setThreads(processedThreads);
+    } catch (error) {
+      console.error('Error fetching threads:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load threads. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setThreadsLoading(false);
+    }
+  };
+
+  const getSortOrderColumn = () => {
+    switch (sortOption) {
+      case "new":
+        return 'created_at';
+      case "top":
+        // This is handled client-side since it requires aggregating votes
+        return 'created_at';
+      case "comments":
+        // This is handled client-side since it requires counting comments
+        return 'created_at';
+      case "trending":
+      default:
+        // This is handled client-side since it combines votes and comments
+        return 'created_at';
+    }
+  };
+  
+  // Sort threads based on active sort option
+  const getSortedThreads = () => {
+    let sortedThreads = [...threads];
+    
+    switch (sortOption) {
+      case "trending":
+        return sortedThreads.sort((a, b) => (b.votes + b.commentCount) - (a.votes + a.commentCount));
+      case "new":
+        // Already sorted by created_at in the query
+        return sortedThreads;
+      case "top":
+        return sortedThreads.sort((a, b) => b.votes - a.votes);
+      case "comments":
+        return sortedThreads.sort((a, b) => b.commentCount - a.commentCount);
+      default:
+        return sortedThreads;
     }
   };
   
@@ -150,24 +297,6 @@ const CommunityDetail = () => {
       });
     } finally {
       setJoiningLoading(false);
-    }
-  };
-  
-  // Sort threads based on active sort option
-  const getSortedThreads = () => {
-    let sortedThreads = [...threads];
-    
-    switch (sortOption) {
-      case "trending":
-        return sortedThreads.sort((a, b) => b.votes + b.commentCount - (a.votes + a.commentCount));
-      case "new":
-        return sortedThreads; // Already sorted by newest in our sample
-      case "top":
-        return sortedThreads.sort((a, b) => b.votes - a.votes);
-      case "comments":
-        return sortedThreads.sort((a, b) => b.commentCount - a.commentCount);
-      default:
-        return sortedThreads;
     }
   };
   
@@ -340,9 +469,28 @@ const CommunityDetail = () => {
                 </div>
                 
                 <div className="space-y-4">
-                  {getSortedThreads().map((thread) => (
-                    <ThreadCard key={thread.id} thread={thread} />
-                  ))}
+                  {threadsLoading ? (
+                    <div className="flex flex-col items-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                      <p className="text-muted-foreground">Loading threads...</p>
+                    </div>
+                  ) : threads.length > 0 ? (
+                    <ThreadList threads={getSortedThreads()} />
+                  ) : (
+                    <div className="text-center py-12 bg-card rounded-lg border">
+                      <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No threads yet</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Be the first to start a conversation in this community!
+                      </p>
+                      <Button asChild>
+                        <Link to="/create">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Create Thread
+                        </Link>
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
               
@@ -423,53 +571,5 @@ const CommunityDetail = () => {
     </div>
   );
 };
-
-// Sample thread data
-const sampleThreads = [
-  {
-    id: 1,
-    title: "What's your favorite development stack for building modern web applications?",
-    content: "I've been experimenting with different tech stacks lately and wanted to hear what others are using. Currently I'm working with React, TypeScript, and Tailwind CSS on the frontend with Node.js and Express on the backend. What's your go-to stack and why do you prefer it?",
-    author: { name: "techEnthusiast", avatar: "/placeholder.svg" },
-    community: { name: "Technology", id: 1 },
-    votes: 127,
-    commentCount: 48,
-    tags: ["Web Development", "Programming", "Tech Stack"],
-    createdAt: "3 hours ago"
-  },
-  {
-    id: 6,
-    title: "Apple just announced their new M3 MacBook Pro lineup - thoughts?",
-    content: "Apple unveiled their new MacBook Pro lineup with the M3 chips today. The performance gains look impressive but the price is still high. What do you think? Is it worth upgrading from an M1?",
-    author: { name: "appleFan", avatar: "/placeholder.svg" },
-    community: { name: "Technology", id: 1 },
-    votes: 98,
-    commentCount: 64,
-    tags: ["Apple", "Hardware", "MacBook"],
-    createdAt: "8 hours ago"
-  },
-  {
-    id: 7,
-    title: "Open source AI models are getting impressive - check out this new project",
-    content: "I've been testing some of the latest open source AI models and they're starting to rival the paid options. This new model from Meta can run locally on decent hardware and produces results nearly as good as GPT-4.",
-    author: { name: "ai_researcher", avatar: "/placeholder.svg" },
-    community: { name: "Technology", id: 1 },
-    votes: 156,
-    commentCount: 37,
-    tags: ["AI", "Machine Learning", "Open Source"],
-    createdAt: "1 day ago"
-  },
-  {
-    id: 8,
-    title: "Mechanical keyboard recommendations for programmers?",
-    content: "I'm in the market for a new mechanical keyboard and want something that's good for long coding sessions. Preferably not too loud but with good tactile feedback. Budget is around $150. Any recommendations?",
-    author: { name: "codingTypist", avatar: "/placeholder.svg" },
-    community: { name: "Technology", id: 1 },
-    votes: 78,
-    commentCount: 92,
-    tags: ["Hardware", "Keyboards", "Peripherals"],
-    createdAt: "2 days ago"
-  },
-];
 
 export default CommunityDetail;
