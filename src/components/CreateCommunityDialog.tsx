@@ -61,6 +61,7 @@ const CreateCommunityDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bannerImage, setBannerImage] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [submissionId, setSubmissionId] = useState<string>("");
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -100,6 +101,14 @@ const CreateCommunityDialog = ({
       return;
     }
     
+    // Prevent duplicate submissions by checking if we're already submitting
+    if (isSubmitting) {
+      return;
+    }
+    
+    // Generate a unique submission ID for this form submission
+    const currentSubmissionId = Date.now().toString();
+    setSubmissionId(currentSubmissionId);
     setIsSubmitting(true);
     
     try {
@@ -192,21 +201,45 @@ const CreateCommunityDialog = ({
         await onCommunityCreated();
       }
       
-      navigate(`/community/${communityData.id}`);
+      // Only navigate if this submission hasn't been superseded by another
+      if (submissionId === currentSubmissionId) {
+        navigate(`/community/${communityData.id}`);
+      }
     } catch (error: any) {
-      console.error("Complete error:", error);
-      toast({
-        title: "Failed to Create Community",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
+      // Check if it's a duplicate community error
+      if (error.code === '23505' && error.message?.includes('communities_name_key')) {
+        toast({
+          title: "Community Name Already Exists",
+          description: "Please choose a different name for your community",
+          variant: "destructive",
+        });
+      } else {
+        console.error("Complete error:", error);
+        toast({
+          title: "Failed to Create Community",
+          description: error.message || "An unexpected error occurred",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
   
+  // Reset the form state when the dialog closes
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      form.reset();
+      setBannerImage(null);
+      setBannerPreview(null);
+      setIsSubmitting(false);
+      setSubmissionId("");
+    }
+    onOpenChange(open);
+  };
+  
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create New Community</DialogTitle>
@@ -330,7 +363,7 @@ const CreateCommunityDialog = ({
             />
             
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
