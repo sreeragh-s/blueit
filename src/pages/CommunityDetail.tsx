@@ -6,10 +6,8 @@ import ThreadList from "@/components/ThreadList";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  PlusCircle, 
-  TrendingUp, 
+  PlusCircle,
   Clock, 
-  Flame, 
   MessageSquare, 
   Users, 
   Info,
@@ -35,7 +33,7 @@ const CommunityDetail = () => {
   const [isJoined, setIsJoined] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState("threads");
-  const [sortOption, setSortOption] = useState("trending");
+  const [sortOption, setSortOption] = useState("new");
   const [loading, setLoading] = useState(true);
   const [threadsLoading, setThreadsLoading] = useState(true);
   const [joiningLoading, setJoiningLoading] = useState(false);
@@ -59,7 +57,6 @@ const CommunityDetail = () => {
     try {
       setThreadsLoading(true);
       
-      // Fetch threads for this community
       const { data: threadsData, error: threadsError } = await supabase
         .from('threads')
         .select(`
@@ -71,7 +68,7 @@ const CommunityDetail = () => {
           community_id
         `)
         .eq('community_id', communityId)
-        .order(getSortOrderColumn(), { ascending: sortOption === 'new' ? false : true });
+        .order('created_at', { ascending: sortOption === 'new' ? false : true });
       
       if (threadsError) throw threadsError;
       
@@ -81,45 +78,38 @@ const CommunityDetail = () => {
         return;
       }
       
-      // Process threads with proper async handling
       const processedThreads = await Promise.all(
         threadsData.map(async (thread) => {
-          // Fetch author
           const { data: authorData } = await supabase
             .from('profiles')
             .select('id, username, avatar_url')
             .eq('id', thread.user_id)
             .single();
           
-          // Fetch community
           const { data: communityData } = await supabase
             .from('communities')
             .select('id, name')
             .eq('id', thread.community_id)
             .single();
           
-          // Count upvotes
           const { count: upvotes } = await supabase
             .from('votes')
             .select('id', { count: 'exact' })
             .eq('thread_id', thread.id)
             .eq('vote_type', 'up');
           
-          // Count downvotes
           const { count: downvotes } = await supabase
             .from('votes')
             .select('id', { count: 'exact' })
             .eq('thread_id', thread.id)
             .eq('vote_type', 'down');
           
-          // Count comments
           const { count: commentCount } = await supabase
             .from('comments')
             .select('id', { count: 'exact' })
             .eq('thread_id', thread.id);
           
-          // Fetch tags
-          const { data: tagsData } = await supabase
+          const tagsData = await supabase
             .from('thread_tags')
             .select('tags:tag_id(name)')
             .eq('thread_id', thread.id);
@@ -165,7 +155,6 @@ const CommunityDetail = () => {
     try {
       setLoading(true);
       
-      // Fetch community details
       const { data: communityData, error: communityError } = await supabase
         .from('communities')
         .select('*')
@@ -178,7 +167,6 @@ const CommunityDetail = () => {
       
       setCommunity(communityData);
       
-      // Check if user is a member and their role
       if (user) {
         const { data: memberData, error: memberError } = await supabase
           .from('community_members')
@@ -211,31 +199,19 @@ const CommunityDetail = () => {
     switch (sortOption) {
       case "new":
         return 'created_at';
-      case "top":
-        // This is handled client-side since it requires aggregating votes
-        return 'created_at';
       case "comments":
-        // This is handled client-side since it requires counting comments
         return 'created_at';
-      case "trending":
       default:
-        // This is handled client-side since it combines votes and comments
         return 'created_at';
     }
   };
   
-  // Sort threads based on active sort option
   const getSortedThreads = () => {
     let sortedThreads = [...threads];
     
     switch (sortOption) {
-      case "trending":
-        return sortedThreads.sort((a, b) => (b.votes + b.commentCount) - (a.votes + a.commentCount));
       case "new":
-        // Already sorted by created_at in the query
         return sortedThreads;
-      case "top":
-        return sortedThreads.sort((a, b) => b.votes - a.votes);
       case "comments":
         return sortedThreads.sort((a, b) => b.commentCount - a.commentCount);
       default:
@@ -253,7 +229,6 @@ const CommunityDetail = () => {
       setJoiningLoading(true);
       
       if (isJoined) {
-        // Leave community
         const { error } = await supabase
           .from('community_members')
           .delete()
@@ -270,7 +245,6 @@ const CommunityDetail = () => {
           description: `You have left ${community.name}`,
         });
       } else {
-        // Join community
         const { error } = await supabase
           .from('community_members')
           .insert({
@@ -346,7 +320,6 @@ const CommunityDetail = () => {
         <Sidebar />
         
         <main className="flex-1">
-          {/* Community Banner */}
           <div 
             className="h-40 md:h-60 w-full bg-cover bg-center relative"
             style={{ backgroundImage: `url(${community.banner_image || "https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=1200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"})` }}
@@ -363,7 +336,6 @@ const CommunityDetail = () => {
             </div>
           </div>
           
-          {/* Community Actions */}
           <div className="bg-card border-b px-4 py-3 flex justify-between items-center">
             <div className="flex items-center gap-4">
               {isAdmin ? (
@@ -429,15 +401,6 @@ const CommunityDetail = () => {
                 <div className="mb-4">
                   <TabsList>
                     <TabsTrigger 
-                      value="trending" 
-                      onClick={() => setSortOption("trending")}
-                      data-active={sortOption === "trending"}
-                      className={sortOption === "trending" ? "bg-primary text-primary-foreground" : ""}
-                    >
-                      <TrendingUp className="mr-2 h-4 w-4" />
-                      Trending
-                    </TabsTrigger>
-                    <TabsTrigger 
                       value="new" 
                       onClick={() => setSortOption("new")}
                       data-active={sortOption === "new"}
@@ -445,15 +408,6 @@ const CommunityDetail = () => {
                     >
                       <Clock className="mr-2 h-4 w-4" />
                       New
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="top" 
-                      onClick={() => setSortOption("top")}
-                      data-active={sortOption === "top"}
-                      className={sortOption === "top" ? "bg-primary text-primary-foreground" : ""}
-                    >
-                      <Flame className="mr-2 h-4 w-4" />
-                      Top
                     </TabsTrigger>
                     <TabsTrigger 
                       value="comments" 
@@ -558,7 +512,6 @@ const CommunityDetail = () => {
         </main>
       </div>
       
-      {/* Edit Community Dialog */}
       {community && isAdmin && (
         <EditCommunityDialog
           open={isEditCommunityOpen}
