@@ -1,13 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { MessageSquare } from "lucide-react";
 import ThreadCardComment from "@/components/ThreadCardComment";
 import ThreadCardCommentForm from "@/components/ThreadCardCommentForm";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ThreadCardCommentsProps {
-  threadId: string;
+  threadId: string;  // This should be a UUID from the database
   commentCount: number;
 }
 
@@ -19,7 +18,6 @@ interface ProfileData {
 }
 
 const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps) => {
-  const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -118,10 +116,8 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
   };
   
   useEffect(() => {
-    if (showComments) {
-      fetchComments();
-    }
-  }, [showComments, threadId]);
+    fetchComments();
+  }, [threadId]);
   
   const handleCommentAdded = () => {
     console.log("[ThreadCardComments] Comment added, refreshing comments");
@@ -129,49 +125,37 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
   };
   
   return (
-    <div className="mt-1">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-full justify-start text-muted-foreground"
-        onClick={() => setShowComments(!showComments)}
-      >
-        <MessageSquare size={16} className="mr-2" />
-        {commentCount} {commentCount === 1 ? 'Comment' : 'Comments'}
-      </Button>
+    <div className="mt-3 border-t pt-3">
+      <ThreadCardCommentForm 
+        threadId={threadId} 
+        onCommentAdded={handleCommentAdded} 
+      />
       
-      {showComments && (
-        <div className="mt-2 border rounded-md">
-          <ThreadCardCommentForm 
-            threadId={threadId} 
-            onCommentAdded={handleCommentAdded} 
-          />
-          
+      <div className="mt-3">
+        {loading ? (
+          <div className="p-3 text-center text-sm text-muted-foreground">Loading comments...</div>
+        ) : comments.length > 0 ? (
           <div className="divide-y">
-            {loading ? (
-              <div className="p-3 text-center text-sm text-muted-foreground">Loading comments...</div>
-            ) : comments.length > 0 ? (
-              comments.map((comment) => (
-                <ThreadCardComment key={comment.id} comment={comment} />
-              ))
-            ) : (
-              <div className="p-3 text-center text-sm text-muted-foreground">
-                No comments yet. Be the first to comment!
-              </div>
-            )}
+            {comments.map((comment) => (
+              <ThreadCardComment key={comment.id} comment={comment} />
+            ))}
           </div>
-          
-          {commentCount > comments.length && comments.length > 0 && (
-            <div className="p-3 text-center">
-              <Button 
-                variant="link"
-                size="sm"
-                asChild
-              >
-                <a href={`/thread/${threadId}`}>View all {commentCount} comments</a>
-              </Button>
-            </div>
-          )}
+        ) : (
+          <div className="p-3 text-center text-sm text-muted-foreground">
+            No comments yet. Be the first to comment!
+          </div>
+        )}
+      </div>
+      
+      {commentCount > comments.length && comments.length > 0 && (
+        <div className="p-3 text-center">
+          <Button 
+            variant="link"
+            size="sm"
+            asChild
+          >
+            <a href={`/thread/${threadId}`}>View all {commentCount} comments</a>
+          </Button>
         </div>
       )}
     </div>

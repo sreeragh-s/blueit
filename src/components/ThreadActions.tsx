@@ -4,7 +4,7 @@ import { Share2, Bookmark, Flag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ThreadActionsProps {
-  commentCount?: number;
+  commentCount?: number; // Keep this prop for backward compatibility
   saved: boolean;
   isBookmarking: boolean;
   onShare: () => void;
@@ -12,7 +12,6 @@ interface ThreadActionsProps {
 }
 
 const ThreadActions = ({
-  commentCount,
   saved,
   isBookmarking,
   onShare,

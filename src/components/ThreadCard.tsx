@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
   const [commentCount, setCommentCount] = useState(thread.commentCount);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [saved, setSaved] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   
   // Convert thread.id to string and ensure it's in UUID format
   // Log the original thread ID for debugging
@@ -180,6 +180,10 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
     });
   };
 
+  const handleToggleComments = () => {
+    setShowComments(!showComments);
+  };
+
   if (!thread || !threadId) {
     return null;
   }
@@ -204,7 +208,12 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
       
       <CardFooter className="px-4 py-2 flex flex-col border-t bg-muted/20">
         <div className="w-full flex justify-between">
-          <Button variant="ghost" size="sm" className="flex items-center gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={handleToggleComments}
+          >
             <MessageSquare size={16} />
             <span>{commentCount} Comments</span>
           </Button>
@@ -214,11 +223,11 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
             isBookmarking={isBookmarking} 
             onToggleSave={handleToggleSave}
             onShare={handleShare}
-            commentCount={0} // Not used in this context, but required by component props
+            commentCount={commentCount} 
           />
         </div>
         
-        {!compact && (
+        {showComments && (
           <ThreadCardComments threadId={threadId} commentCount={commentCount} />
         )}
       </CardFooter>
