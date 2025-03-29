@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import Sidebar from "@/components/sidebar";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, Trash2 } from "lucide-react";
 import CommunityCard from "@/components/CommunityCard";
