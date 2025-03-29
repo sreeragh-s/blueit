@@ -1,8 +1,7 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -86,17 +85,10 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
             placeholder="What are your thoughts?"
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
-            className="min-h-[80px] text-sm"
+            onBlur={handleSubmitComment}
+            className="min-h-[80px] w-full text-sm"
+            disabled={isSubmitting}
           />
-          <div className="flex justify-end mt-2">
-            <Button 
-              size="sm"
-              onClick={handleSubmitComment} 
-              disabled={!commentText.trim() || isSubmitting}
-            >
-              {isSubmitting ? "Posting..." : "Comment"}
-            </Button>
-          </div>
         </div>
       </div>
     </div>
