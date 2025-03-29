@@ -17,13 +17,13 @@ const Explore = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get("tab");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState(tabFromUrl === "my-posts" ? "my-posts" : "communities");
+  const [activeTab, setActiveTab] = useState(tabFromUrl === "my-posts" ? "my-posts" : "channels");
   const { communities, loading: loadingCommunities } = useCommunities();
   const { user } = useAuth();
   const { threads, isLoading: loadingThreads, refreshThreads } = useThreadsWithRefresh(user?.id);
   
   useEffect(() => {
-    if (activeTab === "communities") {
+    if (activeTab === "channels") {
       searchParams.delete("tab");
     } else {
       searchParams.set("tab", activeTab);
@@ -38,8 +38,8 @@ const Explore = () => {
   }, [tabFromUrl]);
 
   const getSearchPlaceholder = () => {
-    return activeTab === "communities" 
-      ? "Search communities by name, description, or tags..." 
+    return activeTab === "channels" 
+      ? "Search channels by name, description, or tags..." 
       : "Search your posts...";
   };
   
@@ -59,11 +59,11 @@ const Explore = () => {
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
               <TabsList>
-                <TabsTrigger value="communities">All Communities</TabsTrigger>
+                <TabsTrigger value="channels">All Channels</TabsTrigger>
                 <TabsTrigger value="my-posts">My Posts</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="communities">
+              <TabsContent value="channels">
                 <CommunityTab 
                   communities={communities} 
                   loading={loadingCommunities} 

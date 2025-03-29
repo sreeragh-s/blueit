@@ -20,7 +20,7 @@ const Sidebar = ({ className }: SidebarProps) => {
       <SidebarNavigation />
       <SidebarCommunityList onCreateCommunity={() => setIsCreateCommunityOpen(true)} />
 
-      {/* Create Community Dialog */}
+      {/* Create Channel Dialog */}
       <CreateCommunityDialog 
         open={isCreateCommunityOpen} 
         onOpenChange={setIsCreateCommunityOpen} 

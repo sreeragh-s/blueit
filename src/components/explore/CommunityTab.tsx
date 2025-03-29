@@ -33,9 +33,9 @@ const CommunityTab = ({ communities, loading, searchQuery }: CommunityTabProps) 
         ))
       ) : (
         <div className="col-span-full text-center py-12">
-          <h3 className="text-lg font-medium">No communities found</h3>
+          <h3 className="text-lg font-medium">No channels found</h3>
           <p className="text-muted-foreground mt-1">
-            Try a different search term or create a new community.
+            Try a different search term or create a new channel.
           </p>
         </div>
       )}

@@ -9,16 +9,16 @@ import { supabase } from "@/integrations/supabase/client";
 
 const CreateThread = () => {
   const { user } = useAuth();
-  const [hasCommunities, setHasCommunities] = useState<boolean | null>(null);
+  const [hasChannels, setHasChannels] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      checkUserCommunities();
+      checkUserChannels();
     }
   }, [user]);
 
-  const checkUserCommunities = async () => {
+  const checkUserChannels = async () => {
     try {
       setLoading(true);
       
@@ -30,9 +30,9 @@ const CreateThread = () => {
       
       if (error) throw error;
       
-      setHasCommunities(data && data.length > 0);
+      setHasChannels(data && data.length > 0);
     } catch (error) {
-      console.error('Error checking user communities:', error);
+      console.error('Error checking user channels:', error);
     } finally {
       setLoading(false);
     }

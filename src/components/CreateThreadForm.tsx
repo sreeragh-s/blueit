@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface UserCommunity {
+interface UserChannel {
   id: string;
   name: string;
   is_private: boolean;
@@ -34,20 +33,20 @@ const CreateThreadForm = () => {
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userCommunities, setUserCommunities] = useState<UserCommunity[]>([]);
-  const [loadingCommunities, setLoadingCommunities] = useState(true);
+  const [userChannels, setUserChannels] = useState<UserChannel[]>([]);
+  const [loadingChannels, setLoadingChannels] = useState(true);
   
   useEffect(() => {
     if (user) {
-      fetchUserCommunities();
+      fetchUserChannels();
     }
   }, [user]);
   
-  const fetchUserCommunities = async () => {
+  const fetchUserChannels = async () => {
     try {
-      setLoadingCommunities(true);
+      setLoadingChannels(true);
       
-      // Get communities the user is a member of
+      // Get channels the user is a member of
       const { data: memberships, error: membershipError } = await supabase
         .from('community_members')
         .select('community_id')
@@ -56,7 +55,7 @@ const CreateThreadForm = () => {
       if (membershipError) throw membershipError;
       
       if (memberships && memberships.length > 0) {
-        // Get community details for each membership
+        // Get channel details for each membership
         const communityIds = memberships.map(m => m.community_id);
         
         const { data: communityData, error: communityError } = await supabase
@@ -67,20 +66,20 @@ const CreateThreadForm = () => {
         if (communityError) throw communityError;
         
         if (communityData) {
-          setUserCommunities(communityData);
+          setUserChannels(communityData);
         }
       } else {
-        setUserCommunities([]);
+        setUserChannels([]);
       }
     } catch (error) {
-      console.error('Error fetching user communities:', error);
+      console.error('Error fetching user channels:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch your communities. Please try again later.",
+        description: "Failed to fetch your channels. Please try again later.",
         variant: "destructive"
       });
     } finally {
-      setLoadingCommunities(false);
+      setLoadingChannels(false);
     }
   };
   
@@ -202,22 +201,22 @@ const CreateThreadForm = () => {
       <div className="space-y-4">
         <div>
           <label htmlFor="community" className="block text-sm font-medium mb-1">
-            Community <span className="text-red-500">*</span>
+            Channel <span className="text-red-500">*</span>
           </label>
-          {loadingCommunities ? (
+          {loadingChannels ? (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Loading your communities...
+              Loading your channels...
             </div>
-          ) : userCommunities.length === 0 ? (
+          ) : userChannels.length === 0 ? (
             <div className="text-muted-foreground">
-              You haven't joined any communities yet. 
+              You haven't joined any channels yet. 
               <Button 
                 variant="link" 
                 className="p-0 h-auto" 
                 onClick={() => navigate('/explore')}
               >
-                Explore communities
+                Explore channels
               </Button>
             </div>
           ) : (
@@ -226,21 +225,21 @@ const CreateThreadForm = () => {
               onValueChange={setCommunityId}
             >
               <SelectTrigger id="community">
-                <SelectValue placeholder="Select a community" />
+                <SelectValue placeholder="Select a channel" />
               </SelectTrigger>
               <SelectContent>
-                {userCommunities.map((community) => (
-                  <SelectItem key={community.id} value={community.id.toString()}>
+                {userChannels.map((channel) => (
+                  <SelectItem key={channel.id} value={channel.id.toString()}>
                     <div className="flex items-center justify-between w-full">
-                      <span>c/{community.name}</span>
-                      {community.is_private && (
+                      <span>c/{channel.name}</span>
+                      {channel.is_private && (
                         <Button
                           variant="ghost"
                           size="sm"
                           className="ml-2 h-6 px-2"
                           onClick={(e) => {
                             e.stopPropagation();
-                            copyInviteLink(community.id);
+                            copyInviteLink(channel.id);
                           }}
                         >
                           Invite
@@ -328,7 +327,7 @@ const CreateThreadForm = () => {
       <div className="flex justify-end">
         <Button 
           type="submit" 
-          disabled={isSubmitting || !title.trim() || !content.trim() || !communityId || loadingCommunities}
+          disabled={isSubmitting || !title.trim() || !content.trim() || !communityId || loadingChannels}
         >
           {isSubmitting ? "Posting..." : "Post Thread"}
         </Button>

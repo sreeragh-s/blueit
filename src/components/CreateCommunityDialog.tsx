@@ -35,7 +35,7 @@ import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   name: z.string().min(3, {
-    message: "Community name must be at least 3 characters.",
+    message: "Channel name must be at least 3 characters.",
   }).max(50),
   description: z.string().min(10, {
     message: "Description must be at least 10 characters.",
@@ -95,7 +95,7 @@ const CreateCommunityDialog = ({
     if (!user) {
       toast({
         title: "Authentication Required",
-        description: "You must be logged in to create a community",
+        description: "You must be logged in to create a channel",
         variant: "destructive",
       });
       return;
@@ -112,7 +112,7 @@ const CreateCommunityDialog = ({
     setIsSubmitting(true);
     
     try {
-      console.log("Creating community with data:", {
+      console.log("Creating channel with data:", {
         name: values.name,
         description: values.description,
         is_private: values.isPrivate,
@@ -136,11 +136,11 @@ const CreateCommunityDialog = ({
         .single();
       
       if (communityError) {
-        console.error("Error creating community:", communityError);
+        console.error("Error creating channel:", communityError);
         throw communityError;
       }
       
-      console.log("Community created successfully:", communityData);
+      console.log("Channel created successfully:", communityData);
       
       // Create member entry for creator
       const { error: memberError } = await supabase
@@ -190,8 +190,8 @@ const CreateCommunityDialog = ({
       }
       
       toast({
-        title: "Community Created",
-        description: `Successfully created "${values.name}" community`,
+        title: "Channel Created",
+        description: `Successfully created "${values.name}" channel`,
       });
       
       onOpenChange(false);
@@ -206,17 +206,17 @@ const CreateCommunityDialog = ({
         navigate(`/community/${communityData.id}`);
       }
     } catch (error: any) {
-      // Check if it's a duplicate community error
+      // Check if it's a duplicate channel error
       if (error.code === '23505' && error.message?.includes('communities_name_key')) {
         toast({
-          title: "Community Name Already Exists",
-          description: "Please choose a different name for your community",
+          title: "Channel Name Already Exists",
+          description: "Please choose a different name for your channel",
           variant: "destructive",
         });
       } else {
         console.error("Complete error:", error);
         toast({
-          title: "Failed to Create Community",
+          title: "Failed to Create Channel",
           description: error.message || "An unexpected error occurred",
           variant: "destructive",
         });
@@ -242,16 +242,16 @@ const CreateCommunityDialog = ({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Create New Community</DialogTitle>
+          <DialogTitle>Create New Channel</DialogTitle>
           <DialogDescription>
-            Create a new community for people to join and discuss topics.
+            Create a new channel for people to join and discuss topics.
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <FormLabel>Community Banner</FormLabel>
+              <FormLabel>Channel Banner</FormLabel>
               <div 
                 className={cn(
                   "w-full h-32 rounded-md border-2 border-dashed flex justify-center items-center cursor-pointer overflow-hidden",
@@ -287,12 +287,12 @@ const CreateCommunityDialog = ({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Community Name</FormLabel>
+                  <FormLabel>Channel Name</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. Photography Enthusiasts" {...field} />
                   </FormControl>
                   <FormDescription>
-                    This will be displayed as the title of your community.
+                    This will be displayed as the title of your channel.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -307,13 +307,13 @@ const CreateCommunityDialog = ({
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="What is this community about?" 
+                      placeholder="What is this channel about?" 
                       className="resize-none min-h-[100px]" 
                       {...field} 
                     />
                   </FormControl>
                   <FormDescription>
-                    Describe the purpose and topic of your community.
+                    Describe the purpose and topic of your channel.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -325,7 +325,7 @@ const CreateCommunityDialog = ({
               name="rules"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Community Rules</FormLabel>
+                  <FormLabel>Channel Rules</FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="Enter each rule on a new line" 
@@ -334,7 +334,7 @@ const CreateCommunityDialog = ({
                     />
                   </FormControl>
                   <FormDescription>
-                    Set guidelines for community members to follow.
+                    Set guidelines for channel members to follow.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -347,7 +347,7 @@ const CreateCommunityDialog = ({
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base">Private Community</FormLabel>
+                    <FormLabel className="text-base">Private Channel</FormLabel>
                     <FormDescription>
                       If enabled, only invited members can join and view content.
                     </FormDescription>
@@ -373,7 +373,7 @@ const CreateCommunityDialog = ({
                     Creating...
                   </>
                 ) : (
-                  "Create Community"
+                  "Create Channel"
                 )}
               </Button>
             </DialogFooter>

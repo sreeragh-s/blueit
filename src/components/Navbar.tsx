@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -77,7 +78,7 @@ const Navbar = () => {
         
         <div className="flex items-center gap-2 mr-4">
           <Link to="/" className="flex items-center space-x-2">
-            <span className="font-bold text-xl">Community Threads</span>
+            <span className="font-bold text-xl">Blueit</span>
           </Link>
         </div>
         
@@ -86,7 +87,7 @@ const Navbar = () => {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search communities or threads..."
+              placeholder="Search channels or threads..."
               className="w-full pl-8 pr-4"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
