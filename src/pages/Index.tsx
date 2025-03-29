@@ -15,7 +15,7 @@ import ThreadList from "@/components/ThreadList";
 const Index = () => {
   const navigate = useNavigate();
   const { user, session } = useAuth();
-  const [activeTab, setActiveTab] = useState("trending");
+  const [activeTab, setActiveTab] = useState("new");
   
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -29,16 +29,12 @@ const Index = () => {
   // Sort threads based on active tab
   const sortedThreads = [...threads].sort((a, b) => {
     switch (activeTab) {
-      case "trending":
-        return (b.votes + b.commentCount) - (a.votes + a.commentCount);
       case "new":
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      case "top":
-        return b.votes - a.votes;
       case "comments":
         return b.commentCount - a.commentCount;
       default:
-        return 0;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     }
   });
   
