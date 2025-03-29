@@ -17,6 +17,9 @@ import {
   Music,
   Camera
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
+import CreateCommunityDialog from "./CreateCommunityDialog";
 
 interface SidebarProps {
   className?: string;
@@ -35,6 +38,8 @@ const communities = [
 
 const Sidebar = ({ className }: SidebarProps) => {
   const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const [isCreateCommunityOpen, setIsCreateCommunityOpen] = useState(false);
   
   // If mobile, don't render the sidebar
   if (isMobile) return null;
@@ -73,10 +78,17 @@ const Sidebar = ({ className }: SidebarProps) => {
             <h2 className="px-2 text-lg font-semibold tracking-tight">
               My Communities
             </h2>
-            <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-              <PlusCircle className="h-4 w-4" />
-              <span className="sr-only">Create community</span>
-            </Button>
+            {user ? (
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-8 w-8 p-0"
+                onClick={() => setIsCreateCommunityOpen(true)}
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span className="sr-only">Create community</span>
+              </Button>
+            ) : null}
           </div>
           
           <ScrollArea className="h-[300px]">
@@ -98,6 +110,12 @@ const Sidebar = ({ className }: SidebarProps) => {
           </ScrollArea>
         </div>
       </div>
+
+      {/* Create Community Dialog */}
+      <CreateCommunityDialog 
+        open={isCreateCommunityOpen} 
+        onOpenChange={setIsCreateCommunityOpen} 
+      />
     </div>
   );
 };
