@@ -41,6 +41,11 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
     setShowReplyForm(false);
   };
   
+  const toggleReplyForm = () => {
+    setShowReplyForm(!showReplyForm);
+    console.log("Reply form toggled:", !showReplyForm); // Debug log
+  };
+  
   // Limit nesting to 5 levels deep
   const maxLevel = 5;
   
@@ -66,16 +71,18 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
             votes={votes}
             userVote={userVote}
             onVote={handleVote}
-            onReply={() => setShowReplyForm(!showReplyForm)}
+            onReply={toggleReplyForm}
             showReplyButton={level < maxLevel}
           />
           
           {showReplyForm && (
-            <CommentReplyForm
-              commentId={comment.id}
-              onReplySubmitted={handleReplySubmitted}
-              onCancel={() => setShowReplyForm(false)}
-            />
+            <div className="mt-3">
+              <CommentReplyForm
+                commentId={comment.id}
+                onReplySubmitted={handleReplySubmitted}
+                onCancel={() => setShowReplyForm(false)}
+              />
+            </div>
           )}
           
           {localReplies.length > 0 && (
