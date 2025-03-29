@@ -40,7 +40,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
         .from('votes')
         .select('vote_type')
         .eq('user_id', user.id)
-        .eq('thread_id', thread.id)
+        .eq('thread_id', thread.id.toString())
         .single();
       
       if (data) {
@@ -59,7 +59,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
         .from('bookmarks')
         .select('id')
         .eq('user_id', user.id)
-        .eq('thread_id', thread.id)
+        .eq('thread_id', thread.id.toString())
         .single();
       
       setSaved(!!data);
@@ -83,7 +83,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
       const { data: existingVoteData } = await supabase
         .from('votes')
         .select('*')
-        .eq('thread_id', thread.id)
+        .eq('thread_id', thread.id.toString())
         .eq('user_id', user.id)
         .maybeSingle();
         
@@ -122,7 +122,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
         await supabase
           .from('votes')
           .insert({
-            thread_id: thread.id,
+            thread_id: thread.id.toString(),
             user_id: user.id,
             vote_type: type
           });
@@ -161,7 +161,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
         const { data: bookmarkData } = await supabase
           .from('bookmarks')
           .select('id')
-          .eq('thread_id', thread.id)
+          .eq('thread_id', thread.id.toString())
           .eq('user_id', user.id)
           .single();
           
@@ -182,7 +182,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
         await supabase
           .from('bookmarks')
           .insert({
-            thread_id: thread.id,
+            thread_id: thread.id.toString(),
             user_id: user.id
           });
         
