@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import ThreadCardComment from "@/components/ThreadCardComment";
@@ -240,9 +239,11 @@ const ThreadCardComments = ({
       // Then get all replies
       const replies = commentsData.filter(comment => comment.parent_id !== null);
       
-      // Process top-level comments
-      const processedComments = await Promise.all(
-        topLevelComments.map(async (comment) => {
+      // Build a comment tree with proper nesting for 5 levels
+      const buildCommentTree = async (comments, replies, level = 0) => {
+        if (level >= 5) return []; // Prevent excessive nesting
+        
+        return Promise.all(comments.map(async (comment) => {
           // Get user profile for comment
           const { data: profileData } = await supabase
             .from('profiles')
@@ -264,52 +265,11 @@ const ThreadCardComments = ({
             .eq('comment_id', comment.id)
             .eq('vote_type', 'down');
           
-          // Get replies for this comment
+          // Get comment's direct replies
           const commentReplies = replies.filter(reply => reply.parent_id === comment.id);
           
-          // Process replies
-          const processedReplies = await Promise.all(
-            commentReplies.map(async (reply) => {
-              // Get user profile for reply
-              const { data: replyProfileData } = await supabase
-                .from('profiles')
-                .select('username, avatar_url')
-                .eq('id', reply.user_id)
-                .single();
-              
-              // Count upvotes for reply
-              const { count: replyUpvotes } = await supabase
-                .from('votes')
-                .select('id', { count: 'exact' })
-                .eq('comment_id', reply.id)
-                .eq('vote_type', 'up');
-              
-              // Count downvotes for reply
-              const { count: replyDownvotes } = await supabase
-                .from('votes')
-                .select('id', { count: 'exact' })
-                .eq('comment_id', reply.id)
-                .eq('vote_type', 'down');
-              
-              return {
-                id: reply.id,
-                content: reply.content,
-                author: {
-                  name: replyProfileData?.username || 'Anonymous',
-                  avatar: replyProfileData?.avatar_url
-                },
-                votes: ((replyUpvotes || 0) - (replyDownvotes || 0)),
-                createdAt: new Date(reply.created_at).toLocaleDateString('en-US', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }),
-                parent_id: comment.id
-              };
-            })
-          );
+          // Process nested replies recursively
+          const processedReplies = await buildCommentTree(commentReplies, replies, level + 1);
           
           return {
             id: comment.id,
@@ -326,10 +286,16 @@ const ThreadCardComments = ({
               hour: '2-digit',
               minute: '2-digit'
             }),
+            level,
+            parent_id: comment.parent_id,
+            user_id: comment.user_id,
             replies: processedReplies
           };
-        })
-      );
+        }));
+      };
+      
+      // Build the full comment tree
+      const processedComments = await buildCommentTree(topLevelComments, replies);
       
       console.log("[ThreadCardComments] All processed comments:", processedComments);
       setAllComments(processedComments);
@@ -357,75 +323,44 @@ const ThreadCardComments = ({
       onCommentCountChange(commentCount + 1);
     }
     
-    if (newComment.parent_id) {
-      // This is a reply to an existing comment
-      if (showAllComments) {
-        // Update allComments state
-        setAllComments(prevComments => {
-          return prevComments.map(comment => {
-            if (comment.id === newComment.parent_id) {
-              return {
-                ...comment,
-                replies: [newComment, ...(comment.replies || [])]
-              };
-            }
-            return comment;
-          });
-        });
-      } else {
-        // Update comments state
-        setComments(prevComments => {
-          return prevComments.map(comment => {
-            if (comment.id === newComment.parent_id) {
-              return {
-                ...comment,
-                replies: [newComment, ...(comment.replies || [])]
-              };
-            }
-            return comment;
-          });
-        });
+    // Implementation with proper support for 5 levels of nesting
+    const updateCommentsWithReply = (commentsArray, newReply) => {
+      // For a top-level comment
+      if (!newReply.parent_id) {
+        return [{ ...newReply, replies: [] }, ...commentsArray];
       }
+      
+      // For nested replies - recursively update the comment tree
+      return commentsArray.map(comment => {
+        // If this is the parent comment, add the reply to its replies
+        if (comment.id === newReply.parent_id) {
+          return {
+            ...comment,
+            replies: [newReply, ...(comment.replies || [])]
+          };
+        }
+        
+        // If this comment has replies, search them recursively
+        if (comment.replies && comment.replies.length > 0) {
+          return {
+            ...comment,
+            replies: updateCommentsWithReply(comment.replies, newReply)
+          };
+        }
+        
+        // Otherwise return the comment unchanged
+        return comment;
+      });
+    };
+    
+    if (showAllComments) {
+      // Update allComments state with proper nesting
+      setAllComments(prevComments => updateCommentsWithReply(prevComments, newComment));
     } else {
-      // This is a top-level comment
-      if (showAllComments) {
-        // Add to the beginning of allComments
-        setAllComments(prevComments => [
-          { ...newComment, replies: [] },
-          ...prevComments
-        ]);
-      } else {
-        // Add to the beginning of comments
-        setComments(prevComments => [
-          { ...newComment, replies: [] },
-          ...prevComments
-        ]);
-      }
+      // Update comments state with proper nesting
+      setComments(prevComments => updateCommentsWithReply(prevComments, newComment));
     }
   };
-  
-  const renderNestedComment = (comment) => (
-    <div key={comment.id}>
-      <ThreadCardComment 
-        key={comment.id} 
-        comment={comment} 
-        threadId={threadId}
-        onCommentAdded={handleCommentAdded}
-      />
-      {comment.replies && comment.replies.length > 0 && (
-        <div className="pl-5 ml-2 border-l">
-          {comment.replies.map(reply => (
-            <ThreadCardComment 
-              key={reply.id} 
-              comment={reply} 
-              threadId={threadId}
-              onCommentAdded={handleCommentAdded}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
   
   return (
     <div className="mt-3 border-t pt-3">
@@ -440,7 +375,16 @@ const ThreadCardComments = ({
         ) : showAllComments ? (
           allComments.length > 0 ? (
             <div className="space-y-3">
-              {allComments.map(comment => renderNestedComment(comment))}
+              {allComments.map(comment => (
+                <ThreadCardComment 
+                  key={comment.id} 
+                  comment={comment} 
+                  threadId={threadId}
+                  onCommentAdded={handleCommentAdded}
+                  level={0}
+                  maxLevel={5}
+                />
+              ))}
             </div>
           ) : (
             <div className="p-3 text-center text-sm text-muted-foreground">
@@ -449,7 +393,16 @@ const ThreadCardComments = ({
           )
         ) : comments.length > 0 ? (
           <div className="space-y-3">
-            {comments.map(comment => renderNestedComment(comment))}
+            {comments.map(comment => (
+              <ThreadCardComment 
+                key={comment.id} 
+                comment={comment} 
+                threadId={threadId}
+                onCommentAdded={handleCommentAdded}
+                level={0}
+                maxLevel={5}
+              />
+            ))}
           </div>
         ) : (
           <div className="p-3 text-center text-sm text-muted-foreground">

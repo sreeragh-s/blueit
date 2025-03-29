@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface CommentProps {
   comment: {
@@ -20,15 +21,21 @@ interface CommentProps {
     createdAt: string;
     parent_id?: string | null;
     user_id?: string;
+    replies?: any[];
+    level?: number;
   };
   threadId: string;
-  onCommentAdded: (newComment: any) => void;  // Updated to receive the new comment
+  onCommentAdded: (newComment: any) => void;
+  level?: number;  // Added nested level parameter
+  maxLevel?: number; // Max level of nesting allowed
 }
 
 const ThreadCardComment = ({ 
   comment, 
   threadId,
-  onCommentAdded 
+  onCommentAdded,
+  level = 0,
+  maxLevel = 5
 }: CommentProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -37,6 +44,10 @@ const ThreadCardComment = ({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [repliesExpanded, setRepliesExpanded] = useState(true);
+  
+  const hasReplies = comment.replies && comment.replies.length > 0;
+  const canNestFurther = level < maxLevel - 1;
   
   const handleVote = async (type: 'up' | 'down') => {
     if (!user) {
@@ -158,7 +169,9 @@ const ThreadCardComment = ({
         votes: 0,
         createdAt: "Just now",
         parent_id: comment.id,
-        user_id: user.id
+        user_id: user.id,
+        replies: [],
+        level: level + 1
       };
       
       setReplyText("");
@@ -183,8 +196,29 @@ const ThreadCardComment = ({
     }
   };
 
+  const toggleReplies = () => {
+    setRepliesExpanded(!repliesExpanded);
+  };
+
+  // Get indentation based on nesting level
+  const getIndentClass = () => {
+    return level > 0 ? `pl-${Math.min(level * 2, 8)}` : '';
+  };
+
+  // Get background color based on nesting level for visual hierarchy
+  const getLevelBackground = () => {
+    const colors = [
+      '',
+      'bg-muted/10',
+      'bg-muted/20',
+      'bg-muted/30',
+      'bg-muted/40'
+    ];
+    return colors[Math.min(level, colors.length - 1)];
+  };
+
   return (
-    <div className="py-3 border-b last:border-b-0">
+    <div className={`py-3 border-b last:border-b-0 ${getLevelBackground()}`}>
       <div className="flex items-start gap-2">
         <Avatar className="h-6 w-6">
           <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
@@ -220,19 +254,22 @@ const ThreadCardComment = ({
               </Button>
             </div>
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 text-xs"
-              onClick={handleReplyClick}
-              data-comment-id={comment.id}
-            >
-              <MessageSquareReply size={12} className="mr-1" />
-              Reply
-            </Button>
+            {/* Only show Reply button if we haven't reached max nesting */}
+            {canNestFurther && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 text-xs"
+                onClick={handleReplyClick}
+                data-comment-id={comment.id}
+              >
+                <MessageSquareReply size={12} className="mr-1" />
+                Reply
+              </Button>
+            )}
           </div>
           
-          {showReplyForm && (
+          {showReplyForm && canNestFurther && (
             <div className="mt-3">
               <div className="flex items-start gap-2">
                 <Avatar className="h-5 w-5">
@@ -271,6 +308,34 @@ const ThreadCardComment = ({
                 </div>
               </div>
             </div>
+          )}
+          
+          {/* Nested replies */}
+          {hasReplies && (
+            <Collapsible open={repliesExpanded} onOpenChange={toggleReplies} className="mt-3">
+              <div className="flex items-center gap-2">
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-6 text-xs">
+                    {repliesExpanded ? "Hide" : "Show"} {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              
+              <CollapsibleContent>
+                <div className={`mt-3 border-l-2 border-muted ${getIndentClass()}`}>
+                  {comment.replies.map(reply => (
+                    <ThreadCardComment
+                      key={reply.id}
+                      comment={{...reply, level: level + 1}}
+                      threadId={threadId}
+                      onCommentAdded={onCommentAdded}
+                      level={level + 1}
+                      maxLevel={maxLevel}
+                    />
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </div>
       </div>
