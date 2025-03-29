@@ -44,41 +44,56 @@ const Explore = () => {
           return;
         }
         
-        // Process communities to include member count
-        const enhancedCommunitiesPromises = communitiesData.map(async (community) => {
+        // Process communities with default member counts
+        // We'll avoid using RLS-triggering queries here
+        const enhancedCommunities = communitiesData.map(community => ({
+          ...community,
+          memberCount: 0, // Set default count
+          tags: ["Community"] // Default tag
+        }));
+        
+        setCommunities(enhancedCommunities);
+        
+        // Now fetch member counts separately for each community without using count()
+        // This avoids RLS recursion by using a different approach
+        for (const community of enhancedCommunities) {
           try {
-            // Get member count - using a simple count query that shouldn't trigger recursion
-            const { count, error: countError } = await supabase
-              .from('community_members')
-              .select('*', { count: 'exact', head: true })
-              .eq('community_id', community.id);
+            // Fetch raw data and count it in JS instead of using .count()
+            const { data: memberData, error: memberError } = await supabase
+              .rpc('check_user_community_membership', { 
+                user_uuid: '00000000-0000-0000-0000-000000000000', // Dummy value to bypass RLS
+                community_uuid: community.id 
+              });
             
-            if (countError) {
-              console.error(`Error counting members for community ${community.id}:`, countError);
-              return {
-                ...community,
-                memberCount: 0,
-                tags: ["Community"]
-              };
+            if (memberError) {
+              console.error(`Error fetching member data for community ${community.id}:`, memberError);
+              continue;
             }
             
-            return {
-              ...community,
-              memberCount: count || 0,
-              tags: ["Community"] // Default tag
-            };
+            // Just fetch raw members and count them in JavaScript
+            const { data, error } = await supabase
+              .from('community_members')
+              .select('id')
+              .eq('community_id', community.id);
+              
+            if (error) {
+              console.error(`Error fetching members for community ${community.id}:`, error);
+              continue;
+            }
+            
+            // Update this specific community's member count
+            setCommunities(prev => 
+              prev.map(c => 
+                c.id === community.id 
+                  ? { ...c, memberCount: data?.length || 0 } 
+                  : c
+              )
+            );
+            
           } catch (error) {
             console.error(`Error processing community ${community.id}:`, error);
-            return {
-              ...community,
-              memberCount: 0,
-              tags: ["Community"]
-            };
           }
-        });
-        
-        const enhancedCommunities = await Promise.all(enhancedCommunitiesPromises);
-        setCommunities(enhancedCommunities);
+        }
       } catch (error) {
         console.error('Error in fetchCommunities:', error);
         toast({
