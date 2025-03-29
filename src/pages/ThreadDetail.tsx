@@ -23,6 +23,9 @@ const ThreadDetail = () => {
   const { toast } = useToast();
   const [threadExists, setThreadExists] = useState<boolean | null>(null);
   
+  // Always initialize the hook, but conditionally use its result
+  const threadDetailHook = useThreadDetail(threadId || '');
+  
   // Check if thread exists in database first
   useEffect(() => {
     const checkThreadExists = async () => {
@@ -63,9 +66,6 @@ const ThreadDetail = () => {
       });
     }
   }, [threadExists, navigate, toast]);
-
-  // Don't load the hook until we know the thread exists
-  const threadDetailHook = threadExists ? useThreadDetail(threadId as string) : null;
   
   if (threadExists === null) {
     return (
@@ -83,10 +83,6 @@ const ThreadDetail = () => {
   
   if (threadExists === false) {
     return null; // Will redirect in useEffect
-  }
-  
-  if (!threadDetailHook) {
-    return null; // Should never happen, but TypeScript safety
   }
   
   const {
