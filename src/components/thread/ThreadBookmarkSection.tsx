@@ -10,7 +10,7 @@ interface ThreadBookmarkSectionProps {
   threadId: string;
   saved?: boolean;
   isBookmarking?: boolean;
-  onToggleSave?: () => Promise<void>;
+  onToggleSave?: () => Promise<boolean | null | void>;
 }
 
 const ThreadBookmarkSection = ({ 
