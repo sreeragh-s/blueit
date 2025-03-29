@@ -14,7 +14,8 @@ import {
   Gamepad2,
   Laptop,
   Music,
-  Camera
+  Camera,
+  Bookmark
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
@@ -129,6 +130,14 @@ const Sidebar = ({ className }: SidebarProps) => {
                 Explore
               </Link>
             </Button>
+            {user && (
+              <Button variant="ghost" className="w-full justify-start" asChild>
+                <Link to="/saved">
+                  <Bookmark className="mr-2 h-4 w-4" />
+                  Saved
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
         

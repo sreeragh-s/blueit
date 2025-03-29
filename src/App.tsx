@@ -12,6 +12,7 @@ import Signup from "./pages/Signup";
 import Explore from "./pages/Explore";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
+import SavedThreads from "./pages/SavedThreads";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/saved" element={<SavedThreads />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
