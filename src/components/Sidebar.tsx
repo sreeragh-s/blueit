@@ -110,8 +110,8 @@ const Sidebar = ({ className }: SidebarProps) => {
   if (isMobile) return null;
   
   return (
-    <div className={cn("w-[260px] shrink-0 border-r bg-background flex flex-col h-full", className)}>
-      <div className="flex flex-col flex-1 overflow-hidden">
+    <div className={cn("w-[260px] shrink-0 border-r bg-background h-screen", className)}>
+      <div className="flex flex-col h-full overflow-hidden">
         <div className="px-4 py-2">
           <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">
             Discover
