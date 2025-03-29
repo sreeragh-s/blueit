@@ -43,7 +43,7 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
   
   const toggleReplyForm = () => {
     setShowReplyForm(!showReplyForm);
-    console.log("Reply form toggled:", !showReplyForm); // Debug log
+    console.log("Reply form toggled:", !showReplyForm, "Current value:", showReplyForm); // Enhanced debug log
   };
   
   // Limit nesting to 5 levels deep
@@ -76,7 +76,7 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
           />
           
           {showReplyForm && (
-            <div className="mt-3">
+            <div className="mt-3 border-l-2 border-primary pl-3">
               <CommentReplyForm
                 commentId={comment.id}
                 onReplySubmitted={handleReplySubmitted}
