@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useThreadsWithRefresh } from "@/hooks/use-threads-with-refresh";
 
-// Import new components
+// Import components
 import SearchBar from "@/components/explore/SearchBar";
 import CommunityTab from "@/components/explore/CommunityTab";
 import UserPostsTab from "@/components/explore/UserPostsTab";
@@ -44,45 +44,47 @@ const Explore = () => {
   };
   
   return (
-    <>
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <MainLayout>
-        <div className="w-full max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold mb-6">Explore</h1>
-          
-          <SearchBar 
-            searchQuery={searchQuery} 
-            setSearchQuery={setSearchQuery} 
-            placeholder={getSearchPlaceholder()} 
-          />
-          
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList>
-              <TabsTrigger value="communities">All Communities</TabsTrigger>
-              <TabsTrigger value="my-posts">My Posts</TabsTrigger>
-            </TabsList>
+      <div className="flex flex-1 overflow-hidden">
+        <MainLayout>
+          <div className="w-full">
+            <h1 className="text-2xl font-bold mb-6">Explore</h1>
             
-            <TabsContent value="communities">
-              <CommunityTab 
-                communities={communities} 
-                loading={loadingCommunities} 
-                searchQuery={searchQuery} 
-              />
-            </TabsContent>
+            <SearchBar 
+              searchQuery={searchQuery} 
+              setSearchQuery={setSearchQuery} 
+              placeholder={getSearchPlaceholder()} 
+            />
             
-            <TabsContent value="my-posts">
-              <UserPostsTab 
-                threads={threads}
-                loading={loadingThreads}
-                searchQuery={searchQuery}
-                userId={user?.id}
-                refreshThreads={refreshThreads}
-              />
-            </TabsContent>
-          </Tabs>
-        </div>
-      </MainLayout>
-    </>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+              <TabsList>
+                <TabsTrigger value="communities">All Communities</TabsTrigger>
+                <TabsTrigger value="my-posts">My Posts</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="communities">
+                <CommunityTab 
+                  communities={communities} 
+                  loading={loadingCommunities} 
+                  searchQuery={searchQuery} 
+                />
+              </TabsContent>
+              
+              <TabsContent value="my-posts">
+                <UserPostsTab 
+                  threads={threads}
+                  loading={loadingThreads}
+                  searchQuery={searchQuery}
+                  userId={user?.id}
+                  refreshThreads={refreshThreads}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </MainLayout>
+      </div>
+    </div>
   );
 };
 

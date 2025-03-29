@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/sidebar";
+import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBookmarkedThreads } from "@/hooks/use-bookmarked-threads";
 import ThreadFilterTabs from "@/components/ThreadFilterTabs";
@@ -49,14 +50,10 @@ const SavedThreads = () => {
       <Navbar />
       
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar className="flex-shrink-0" />
-        
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <Bookmark className="mr-2 h-5 w-5" />
-              <h1 className="text-2xl font-bold">Saved Threads</h1>
-            </div>
+        <MainLayout>
+          <div className="flex items-center mb-6">
+            <Bookmark className="mr-2 h-5 w-5" />
+            <h1 className="text-2xl font-bold">Saved Threads</h1>
           </div>
           
           <ThreadFilterTabs 
@@ -77,7 +74,7 @@ const SavedThreads = () => {
               </div>
             )}
           </ThreadFilterTabs>
-        </main>
+        </MainLayout>
       </div>
     </div>
   );
