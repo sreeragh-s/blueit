@@ -84,6 +84,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       
+      // First, check if the username already exists
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .limit(1);
+      
+      if (checkError) {
+        throw new Error(checkError.message);
+      }
+      
+      if (existingUsers && existingUsers.length > 0) {
+        toast({
+          title: "Username already taken",
+          description: "Please choose a different username.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Proceed with signup if username is available
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -105,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       toast({
         title: "Sign Up Successful",
-        description: "Welcome to CommunityThreads!",
+        description: "Welcome to Blueit!",
       });
     } catch (error: any) {
       toast({

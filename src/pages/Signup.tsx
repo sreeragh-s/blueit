@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, BotIcon } from "lucide-react";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -47,10 +47,10 @@ const Signup = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 px-4">
       <div className="mb-8">
         <Link to="/" className="flex items-center gap-2">
-          <div className="bg-primary text-primary-foreground rounded-md h-10 w-10 flex items-center justify-center font-bold text-xl">
-            CT
+          <div className="flex items-center">
+            <BotIcon className="h-10 w-10 text-primary" />
+            <h1 className="text-2xl font-bold">Blueit</h1>
           </div>
-          <h1 className="text-2xl font-bold">CommunityThreads</h1>
         </Link>
       </div>
       
@@ -58,7 +58,7 @@ const Signup = () => {
         <CardHeader>
           <CardTitle className="text-2xl">Create an account</CardTitle>
           <CardDescription>
-            Sign up to join communities and participate in discussions
+            Sign up to join channels and participate in discussions
           </CardDescription>
         </CardHeader>
         
