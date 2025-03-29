@@ -1,6 +1,7 @@
+
 import { useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/sidebar";
+import MainLayout from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   MessageSquare, 
@@ -54,10 +55,8 @@ const CommunityDetail = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <div className="container flex">
-        <Sidebar />
-        
-        <main className="flex-1">
+      <div className="flex flex-1 overflow-hidden w-full">
+        <MainLayout>
           <CommunityBanner 
             name={community.name} 
             bannerImage={community.banner_image} 
@@ -72,7 +71,7 @@ const CommunityDetail = () => {
             onOpenEditCommunity={() => setIsEditCommunityOpen(true)}
           />
           
-          <div className="p-4 lg:p-6">
+          <div className="mt-4">
             <Tabs defaultValue="threads" value={activeTab} onValueChange={setActiveTab} className="mb-6">
               <TabsList>
                 <TabsTrigger value="threads">
@@ -120,17 +119,17 @@ const CommunityDetail = () => {
               </TabsContent>
             </Tabs>
           </div>
-        </main>
+          
+          {community && isAdmin && (
+            <EditCommunityDialog
+              open={isEditCommunityOpen}
+              onOpenChange={setIsEditCommunityOpen}
+              community={community}
+              onCommunityUpdated={fetchCommunityData}
+            />
+          )}
+        </MainLayout>
       </div>
-      
-      {community && isAdmin && (
-        <EditCommunityDialog
-          open={isEditCommunityOpen}
-          onOpenChange={setIsEditCommunityOpen}
-          community={community}
-          onCommunityUpdated={fetchCommunityData}
-        />
-      )}
     </div>
   );
 };
