@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCommentVote } from "@/hooks/use-comment-vote";
 import CommentActions from "@/components/CommentActions";
@@ -32,9 +32,9 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
   const { votes, setVotes, userVote, handleVote } = useCommentVote(comment.id);
   
   // Initialize votes from prop
-  useState(() => {
+  useEffect(() => {
     setVotes(comment.votes);
-  });
+  }, [comment.votes, setVotes]);
   
   const handleReplySubmitted = (reply: CommentProps["comment"]) => {
     setLocalReplies([reply, ...localReplies]);
