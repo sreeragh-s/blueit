@@ -137,10 +137,6 @@ const Navbar = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate(`/profile/${user.id}`)}>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/bookmarks')}>
                     <Bookmark className="mr-2 h-4 w-4" />
                     <span>Bookmarks</span>
