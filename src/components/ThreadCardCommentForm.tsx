@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
 interface ThreadCardCommentFormProps {
-  threadId: string;
+  threadId: string;  // Assuming this is now a proper UUID from the database
   onCommentAdded: () => void;
 }
 
@@ -33,9 +33,11 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
     try {
       setIsSubmitting(true);
       
-      // Log inputs for debugging
+      // Extensive logging for debugging
       console.log("Comment submission inputs:", {
-        threadId,
+        threadId,  // Log the threadId directly
+        threadIdType: typeof threadId,
+        threadIdLength: threadId.length,
         userId: user.id,
         commentText
       });
@@ -44,7 +46,12 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(threadId)) {
         console.error("Invalid UUID format for threadId:", threadId);
-        throw new Error(`Invalid UUID format for threadId: ${threadId}`);
+        toast({
+          title: "Error",
+          description: "Invalid thread ID. Please try again.",
+          variant: "destructive"
+        });
+        return;
       }
       
       const { data: newComment, error } = await supabase
