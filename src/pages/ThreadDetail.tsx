@@ -5,9 +5,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import ThreadHeader from "@/components/ThreadHeader";
 import ThreadContent from "@/components/ThreadContent";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import ThreadVoteSection from "@/components/thread/ThreadVoteSection";
@@ -83,8 +81,8 @@ const ThreadDetail = () => {
               threadId={thread.id} 
               initialVotes={votes}
               userVote={userVote}
-              onVote={handleVote}
               isVoting={isVoting}
+              onVote={handleVote}
             />
             
             <ThreadContent thread={thread} />
@@ -92,6 +90,7 @@ const ThreadDetail = () => {
           
           <div className="flex justify-end gap-2 mt-4 border-t pt-4">
             <ThreadBookmarkSection
+              threadId={thread.id}
               saved={saved}
               isBookmarking={isBookmarking}
               onToggleSave={handleToggleSave}
@@ -100,7 +99,7 @@ const ThreadDetail = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => handleShare(thread.id)}
+              onClick={handleShare}
             >
               <Share size={16} className="mr-2" />
               Share
@@ -112,7 +111,7 @@ const ThreadDetail = () => {
       <CommentSection 
         comments={comments} 
         threadId={thread.id} 
-        onSubmitComment={(content) => handleSubmitComment(content)} 
+        onSubmitComment={handleSubmitComment} 
       />
     </MainLayout>
   );

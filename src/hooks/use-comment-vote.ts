@@ -9,6 +9,7 @@ export const useCommentVote = (commentId: string) => {
   const { toast } = useToast();
   const [votes, setVotes] = useState<number>(0);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
+  const [isVoting, setIsVoting] = useState<boolean>(false);
   
   // Check if user has voted on this comment
   useEffect(() => {
@@ -21,7 +22,7 @@ export const useCommentVote = (commentId: string) => {
           .select('vote_type')
           .eq('user_id', user.id)
           .eq('comment_id', commentId)
-          .single();
+          .maybeSingle();
         
         if (data) {
           setUserVote(data.vote_type as 'up' | 'down');
@@ -34,6 +35,35 @@ export const useCommentVote = (commentId: string) => {
     checkUserVote();
   }, [user, commentId]);
 
+  // Fetch comment votes
+  useEffect(() => {
+    const fetchVotes = async () => {
+      if (!commentId) return;
+      
+      try {
+        // Count upvotes
+        const { count: upvotes } = await supabase
+          .from('votes')
+          .select('id', { count: 'exact' })
+          .eq('comment_id', commentId)
+          .eq('vote_type', 'up');
+        
+        // Count downvotes
+        const { count: downvotes } = await supabase
+          .from('votes')
+          .select('id', { count: 'exact' })
+          .eq('comment_id', commentId)
+          .eq('vote_type', 'down');
+        
+        setVotes((upvotes || 0) - (downvotes || 0));
+      } catch (error) {
+        console.error('Error fetching comment votes:', error);
+      }
+    };
+    
+    fetchVotes();
+  }, [commentId]);
+
   const handleVote = async (type: 'up' | 'down') => {
     if (!user) {
       toast({
@@ -43,6 +73,8 @@ export const useCommentVote = (commentId: string) => {
       });
       return;
     }
+    
+    setIsVoting(true);
     
     try {
       console.log("Voting on comment:", {
@@ -129,6 +161,8 @@ export const useCommentVote = (commentId: string) => {
         description: "Failed to register your vote. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsVoting(false);
     }
   };
 
@@ -136,6 +170,7 @@ export const useCommentVote = (commentId: string) => {
     votes,
     setVotes,
     userVote,
-    handleVote
+    handleVote,
+    isVoting
   };
 };

@@ -21,7 +21,7 @@ export const useThreadInteractions = (threadId: string, user: User | null) => {
         .select('vote_type')
         .eq('user_id', user.id)
         .eq('thread_id', threadId)
-        .single();
+        .maybeSingle();
       
       if (data) {
         setUserVote(data.vote_type as 'up' | 'down');
@@ -41,7 +41,7 @@ export const useThreadInteractions = (threadId: string, user: User | null) => {
         .select('id')
         .eq('user_id', user.id)
         .eq('thread_id', threadId)
-        .single();
+        .maybeSingle();
       
       setSaved(!!data);
     } catch (error) {
@@ -90,6 +90,7 @@ export const useThreadInteractions = (threadId: string, user: User | null) => {
         setUserVote(type);
       }
     }
+    return success;
   };
   
   const handleToggleSave = async () => {
@@ -97,6 +98,7 @@ export const useThreadInteractions = (threadId: string, user: User | null) => {
     if (result !== null) {
       setSaved(result);
     }
+    return result;
   };
   
   const handleShare = () => {

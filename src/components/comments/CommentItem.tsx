@@ -19,7 +19,7 @@ const CommentItem = ({ comment, threadId, level = 0 }: CommentItemProps) => {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { vote, isVoting, userVote } = useCommentVote(comment.id);
+  const { votes, userVote, handleVote: vote, isVoting = false } = useCommentVote(comment.id);
 
   const handleReply = async () => {
     if (!replyText.trim() || !user) return;
@@ -69,7 +69,7 @@ const CommentItem = ({ comment, threadId, level = 0 }: CommentItemProps) => {
                   className={`h-4 w-4 ${userVote === 'up' ? 'text-primary' : ''}`}
                 />
               </Button>
-              <span className="text-sm mx-1">{comment.votes}</span>
+              <span className="text-sm mx-1">{comment.votes || votes || 0}</span>
               <Button 
                 variant="ghost" 
                 size="sm" 

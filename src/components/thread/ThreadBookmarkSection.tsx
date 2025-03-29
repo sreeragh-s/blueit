@@ -3,16 +3,34 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Bookmark } from "lucide-react";
 
 interface ThreadBookmarkSectionProps {
   threadId: string;
+  saved?: boolean;
+  isBookmarking?: boolean;
+  onToggleSave?: () => Promise<void>;
 }
 
-const ThreadBookmarkSection = ({ threadId }: ThreadBookmarkSectionProps) => {
+const ThreadBookmarkSection = ({ 
+  threadId, 
+  saved: initialSaved = false, 
+  isBookmarking: initialIsBookmarking = false,
+  onToggleSave: externalToggleSave 
+}: ThreadBookmarkSectionProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [saved, setSaved] = useState(false);
-  const [isBookmarking, setIsBookmarking] = useState(false);
+  const [saved, setSaved] = useState(initialSaved);
+  const [isBookmarking, setIsBookmarking] = useState(initialIsBookmarking);
+
+  useEffect(() => {
+    setSaved(initialSaved);
+  }, [initialSaved]);
+
+  useEffect(() => {
+    setIsBookmarking(initialIsBookmarking);
+  }, [initialIsBookmarking]);
 
   useEffect(() => {
     const checkIfSaved = async () => {
@@ -32,17 +50,24 @@ const ThreadBookmarkSection = ({ threadId }: ThreadBookmarkSectionProps) => {
       }
     };
 
-    checkIfSaved();
-  }, [user, threadId]);
+    if (!externalToggleSave) {
+      checkIfSaved();
+    }
+  }, [user, threadId, externalToggleSave]);
 
   const handleToggleSave = async () => {
+    if (externalToggleSave) {
+      await externalToggleSave();
+      return;
+    }
+
     if (!user) {
       toast({
         title: "Sign in required",
         description: "You need to sign in to save threads.",
         variant: "destructive"
       });
-      return null;
+      return;
     }
     
     if (!threadId) {
@@ -51,7 +76,7 @@ const ThreadBookmarkSection = ({ threadId }: ThreadBookmarkSectionProps) => {
         description: "Invalid thread. Cannot save.",
         variant: "destructive"
       });
-      return null;
+      return;
     }
     
     setIsBookmarking(true);
@@ -77,8 +102,6 @@ const ThreadBookmarkSection = ({ threadId }: ThreadBookmarkSectionProps) => {
         
         setSaved(true);
       }
-      
-      return !saved;
     } catch (error) {
       console.error('Error toggling bookmark:', error);
       toast({
@@ -86,13 +109,23 @@ const ThreadBookmarkSection = ({ threadId }: ThreadBookmarkSectionProps) => {
         description: "Failed to save thread. Please try again.",
         variant: "destructive"
       });
-      return null;
     } finally {
       setIsBookmarking(false);
     }
   };
 
-  return { saved, isBookmarking, handleToggleSave };
+  return (
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      className={`flex items-center gap-1 ${saved ? "text-primary" : ""}`}
+      onClick={() => handleToggleSave()}
+      disabled={isBookmarking}
+    >
+      <Bookmark size={16} />
+      <span>{saved ? "Saved" : "Save"}</span>
+    </Button>
+  );
 };
 
 export default ThreadBookmarkSection;

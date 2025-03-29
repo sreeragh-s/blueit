@@ -13,6 +13,7 @@ export const useThreadData = (threadId: string) => {
   const fetchThread = async () => {
     try {
       setLoading(true);
+      // Using the fixed query without the problematic user_id link
       const { data: threadData, error: threadError } = await supabase
         .from('threads')
         .select(`
@@ -23,8 +24,7 @@ export const useThreadData = (threadId: string) => {
           updated_at,
           user_id,
           community_id,
-          communities:community_id(id, name),
-          profiles:user_id(id, username, avatar_url)
+          communities:community_id(id, name)
         `)
         .eq('id', threadId)
         .single();
@@ -32,8 +32,25 @@ export const useThreadData = (threadId: string) => {
       if (threadError) throw threadError;
       if (!threadData) throw new Error("Thread not found");
       
+      // Separate query for profile data
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .eq('id', threadData.user_id)
+        .maybeSingle();
+      
+      // Combine the data
+      const combinedData = {
+        ...threadData,
+        profiles: profileData || {
+          id: threadData.user_id,
+          username: 'Unknown User',
+          avatar_url: null
+        }
+      };
+      
       // Convert to our query result type with proper type assertion
-      const typedThreadData = threadData as unknown as ThreadQueryResult;
+      const typedThreadData = combinedData as unknown as ThreadQueryResult;
       
       // Count upvotes
       const { count: upvotes } = await supabase

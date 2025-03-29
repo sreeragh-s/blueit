@@ -7,19 +7,40 @@ import ThreadVoteControls from "@/components/ThreadVoteControls";
 
 interface ThreadVoteSectionProps {
   threadId: string;
-  initialVotes: number;
+  initialVotes?: number;
+  userVote?: 'up' | 'down' | null;
+  isVoting?: boolean;
+  onVote?: (type: 'up' | 'down') => Promise<boolean>;
 }
 
-const ThreadVoteSection = ({ threadId, initialVotes }: ThreadVoteSectionProps) => {
+const ThreadVoteSection = ({ 
+  threadId, 
+  initialVotes = 0,
+  userVote: externalUserVote = null,
+  isVoting: externalIsVoting = false,
+  onVote: externalVote
+}: ThreadVoteSectionProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [votes, setVotes] = useState(initialVotes);
-  const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
-  const [isVoting, setIsVoting] = useState(false);
+  const [userVote, setUserVote] = useState<'up' | 'down' | null>(externalUserVote);
+  const [isVoting, setIsVoting] = useState(externalIsVoting);
+
+  useEffect(() => {
+    setVotes(initialVotes);
+  }, [initialVotes]);
+
+  useEffect(() => {
+    setUserVote(externalUserVote);
+  }, [externalUserVote]);
+
+  useEffect(() => {
+    setIsVoting(externalIsVoting);
+  }, [externalIsVoting]);
 
   useEffect(() => {
     const checkUserVote = async () => {
-      if (!user || !threadId) return;
+      if (!user || !threadId || externalVote) return;
       
       try {
         const { data } = await supabase
@@ -37,10 +58,42 @@ const ThreadVoteSection = ({ threadId, initialVotes }: ThreadVoteSectionProps) =
       }
     };
 
-    checkUserVote();
-  }, [user, threadId]);
+    const fetchVoteCount = async () => {
+      if (!threadId || externalVote) return;
+      
+      try {
+        // Count upvotes
+        const { count: upvotes } = await supabase
+          .from('votes')
+          .select('id', { count: 'exact' })
+          .eq('thread_id', threadId)
+          .eq('vote_type', 'up');
+        
+        // Count downvotes
+        const { count: downvotes } = await supabase
+          .from('votes')
+          .select('id', { count: 'exact' })
+          .eq('thread_id', threadId)
+          .eq('vote_type', 'down');
+        
+        setVotes((upvotes || 0) - (downvotes || 0));
+      } catch (error) {
+        console.error('Error fetching vote count:', error);
+      }
+    };
+
+    if (!externalVote) {
+      checkUserVote();
+      fetchVoteCount();
+    }
+  }, [user, threadId, externalVote]);
 
   const handleVote = async (type: 'up' | 'down') => {
+    if (externalVote) {
+      await externalVote(type);
+      return;
+    }
+
     if (!user) {
       toast({
         title: "Sign in required",
@@ -101,8 +154,6 @@ const ThreadVoteSection = ({ threadId, initialVotes }: ThreadVoteSectionProps) =
         setVotes(type === 'up' ? votes + 2 : votes - 2);
         setUserVote(type);
       }
-      
-      return true;
     } catch (error) {
       console.error('Error voting:', error);
       toast({
@@ -110,7 +161,6 @@ const ThreadVoteSection = ({ threadId, initialVotes }: ThreadVoteSectionProps) =
         description: "Failed to register your vote. Please try again.",
         variant: "destructive"
       });
-      return false;
     } finally {
       setIsVoting(false);
     }
