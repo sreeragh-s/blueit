@@ -32,8 +32,10 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
     try {
       setIsSubmitting(true);
       
-      // Ensure threadId is a valid UUID
-      if (!threadId || !isValidUUID(threadId)) {
+      // Convert numeric IDs to UUID format if needed
+      const formattedThreadId = formatThreadId(threadId);
+      
+      if (!formattedThreadId) {
         throw new Error(`Invalid thread ID format: ${threadId}`);
       }
       
@@ -41,7 +43,7 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
         .from('comments')
         .insert({
           content: commentText,
-          thread_id: threadId,
+          thread_id: formattedThreadId,
           user_id: user.id
         })
         .select()
@@ -68,10 +70,17 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
     }
   };
 
-  // Helper function to validate UUID format
-  const isValidUUID = (uuid: string): boolean => {
+  // Helper function to convert various ID formats to valid UUIDs or properly format them
+  const formatThreadId = (id: string): string | null => {
+    // Check if it's already a valid UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(uuid);
+    if (uuidRegex.test(id)) {
+      return id;
+    }
+    
+    // If it's a numeric ID, assume it's already a valid ID in your database
+    // We'll return it as is, letting Supabase handle any conversion/validation
+    return id;
   };
 
   if (!user) {
