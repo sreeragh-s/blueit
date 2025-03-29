@@ -7,7 +7,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   Home, 
   Compass, 
-  TrendingUp, 
   PlusCircle,
   Heart,
   Star,
@@ -128,12 +127,6 @@ const Sidebar = ({ className }: SidebarProps) => {
               <Link to="/explore">
                 <Compass className="mr-2 h-4 w-4" />
                 Explore
-              </Link>
-            </Button>
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link to="/trending">
-                <TrendingUp className="mr-2 h-4 w-4" />
-                Trending
               </Link>
             </Button>
           </div>
