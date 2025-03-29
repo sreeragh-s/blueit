@@ -24,6 +24,8 @@ const ThreadCardComments = ({
 }: ThreadCardCommentsProps) => {
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showAllComments, setShowAllComments] = useState(false);
+  const [allComments, setAllComments] = useState<any[]>([]);
   
   console.log("[ThreadCardComments] Received threadId:", {
     value: threadId,
@@ -54,7 +56,8 @@ const ThreadCardComments = ({
           id,
           content,
           created_at,
-          user_id
+          user_id,
+          parent_id
         `)
         .eq('thread_id', threadId)
         .is('parent_id', null) // Only get top-level comments
@@ -96,6 +99,63 @@ const ThreadCardComments = ({
             .eq('comment_id', comment.id)
             .eq('vote_type', 'down');
           
+          // Get replies for this comment
+          const { data: repliesData } = await supabase
+            .from('comments')
+            .select(`
+              id,
+              content,
+              created_at,
+              user_id
+            `)
+            .eq('thread_id', threadId)
+            .eq('parent_id', comment.id)
+            .order('created_at', { ascending: true });
+            
+          // Process replies to include user profiles and vote counts
+          const processedReplies = repliesData ? await Promise.all(
+            repliesData.map(async (reply) => {
+              // Get user profile for reply
+              const { data: replyProfileData } = await supabase
+                .from('profiles')
+                .select('username, avatar_url')
+                .eq('id', reply.user_id)
+                .single();
+              
+              // Count upvotes for reply
+              const { count: replyUpvotes } = await supabase
+                .from('votes')
+                .select('id', { count: 'exact' })
+                .eq('comment_id', reply.id)
+                .eq('vote_type', 'up');
+              
+              // Count downvotes for reply
+              const { count: replyDownvotes } = await supabase
+                .from('votes')
+                .select('id', { count: 'exact' })
+                .eq('comment_id', reply.id)
+                .eq('vote_type', 'down');
+              
+              return {
+                id: reply.id,
+                content: reply.content,
+                author: {
+                  name: replyProfileData?.username || 'Anonymous',
+                  avatar: replyProfileData?.avatar_url
+                },
+                votes: ((replyUpvotes || 0) - (replyDownvotes || 0)),
+                createdAt: new Date(reply.created_at).toLocaleDateString('en-US', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }),
+                parent_id: comment.id
+              };
+            })
+          ) : [];
+          
           return {
             id: comment.id,
             content: comment.content,
@@ -110,7 +170,8 @@ const ThreadCardComments = ({
               year: 'numeric',
               hour: '2-digit',
               minute: '2-digit'
-            })
+            }),
+            replies: processedReplies || []
           };
         })
       );
@@ -134,14 +195,190 @@ const ThreadCardComments = ({
     }
   };
   
+  const fetchAllComments = async () => {
+    if (!threadId) return;
+    
+    console.log("[ThreadCardComments] Fetching all comments for threadId:", threadId);
+    
+    // Validate UUID format for threadId
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(threadId)) {
+      console.error("[ThreadCardComments] Invalid UUID format for threadId:", threadId);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      // Get all comments for this thread
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('comments')
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id,
+          parent_id
+        `)
+        .eq('thread_id', threadId)
+        .order('created_at', { ascending: false });
+      
+      if (commentsError) {
+        console.error("[ThreadCardComments] Error fetching all comments:", commentsError);
+        throw commentsError;
+      }
+      
+      if (!commentsData || commentsData.length === 0) {
+        setAllComments([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Process comments to include user profiles and vote counts
+      // First, get all top-level comments
+      const topLevelComments = commentsData.filter(comment => comment.parent_id === null);
+      // Then get all replies
+      const replies = commentsData.filter(comment => comment.parent_id !== null);
+      
+      // Process top-level comments
+      const processedComments = await Promise.all(
+        topLevelComments.map(async (comment) => {
+          // Get user profile for comment
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', comment.user_id)
+            .single();
+          
+          // Count upvotes for comment
+          const { count: upvotes } = await supabase
+            .from('votes')
+            .select('id', { count: 'exact' })
+            .eq('comment_id', comment.id)
+            .eq('vote_type', 'up');
+          
+          // Count downvotes for comment
+          const { count: downvotes } = await supabase
+            .from('votes')
+            .select('id', { count: 'exact' })
+            .eq('comment_id', comment.id)
+            .eq('vote_type', 'down');
+          
+          // Get replies for this comment
+          const commentReplies = replies.filter(reply => reply.parent_id === comment.id);
+          
+          // Process replies
+          const processedReplies = await Promise.all(
+            commentReplies.map(async (reply) => {
+              // Get user profile for reply
+              const { data: replyProfileData } = await supabase
+                .from('profiles')
+                .select('username, avatar_url')
+                .eq('id', reply.user_id)
+                .single();
+              
+              // Count upvotes for reply
+              const { count: replyUpvotes } = await supabase
+                .from('votes')
+                .select('id', { count: 'exact' })
+                .eq('comment_id', reply.id)
+                .eq('vote_type', 'up');
+              
+              // Count downvotes for reply
+              const { count: replyDownvotes } = await supabase
+                .from('votes')
+                .select('id', { count: 'exact' })
+                .eq('comment_id', reply.id)
+                .eq('vote_type', 'down');
+              
+              return {
+                id: reply.id,
+                content: reply.content,
+                author: {
+                  name: replyProfileData?.username || 'Anonymous',
+                  avatar: replyProfileData?.avatar_url
+                },
+                votes: ((replyUpvotes || 0) - (replyDownvotes || 0)),
+                createdAt: new Date(reply.created_at).toLocaleDateString('en-US', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }),
+                parent_id: comment.id
+              };
+            })
+          );
+          
+          return {
+            id: comment.id,
+            content: comment.content,
+            author: {
+              name: profileData?.username || 'Anonymous',
+              avatar: profileData?.avatar_url
+            },
+            votes: ((upvotes || 0) - (downvotes || 0)),
+            createdAt: new Date(comment.created_at).toLocaleDateString('en-US', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+            replies: processedReplies
+          };
+        })
+      );
+      
+      console.log("[ThreadCardComments] All processed comments:", processedComments);
+      setAllComments(processedComments);
+    } catch (error) {
+      console.error('[ThreadCardComments] Error fetching all comments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   useEffect(() => {
     fetchComments();
   }, [threadId]);
   
+  const handleViewAllComments = async () => {
+    setShowAllComments(true);
+    await fetchAllComments();
+  };
+  
   const handleCommentAdded = () => {
     console.log("[ThreadCardComments] Comment added, refreshing comments");
     fetchComments();
+    if (showAllComments) {
+      fetchAllComments();
+    }
   };
+  
+  const renderNestedComment = (comment) => (
+    <div key={comment.id}>
+      <ThreadCardComment 
+        key={comment.id} 
+        comment={comment} 
+        threadId={threadId}
+        onCommentAdded={handleCommentAdded}
+      />
+      {comment.replies && comment.replies.length > 0 && (
+        <div className="pl-5 ml-2 border-l">
+          {comment.replies.map(reply => (
+            <ThreadCardComment 
+              key={reply.id} 
+              comment={reply} 
+              threadId={threadId}
+              onCommentAdded={handleCommentAdded}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
   
   return (
     <div className="mt-3 border-t pt-3">
@@ -153,16 +390,19 @@ const ThreadCardComments = ({
       <div className="mt-3">
         {loading ? (
           <div className="p-3 text-center text-sm text-muted-foreground">Loading comments...</div>
+        ) : showAllComments ? (
+          allComments.length > 0 ? (
+            <div className="space-y-3">
+              {allComments.map(comment => renderNestedComment(comment))}
+            </div>
+          ) : (
+            <div className="p-3 text-center text-sm text-muted-foreground">
+              No comments yet. Be the first to comment!
+            </div>
+          )
         ) : comments.length > 0 ? (
           <div className="space-y-3">
-            {comments.map((comment) => (
-              <ThreadCardComment 
-                key={comment.id} 
-                comment={comment} 
-                threadId={threadId}
-                onCommentAdded={handleCommentAdded}
-              />
-            ))}
+            {comments.map(comment => renderNestedComment(comment))}
           </div>
         ) : (
           <div className="p-3 text-center text-sm text-muted-foreground">
@@ -171,14 +411,14 @@ const ThreadCardComments = ({
         )}
       </div>
       
-      {commentCount > comments.length && comments.length > 0 && (
+      {!showAllComments && commentCount > (comments.length + comments.reduce((total, comment) => total + (comment.replies?.length || 0), 0)) && comments.length > 0 && (
         <div className="p-3 text-center">
           <Button 
             variant="link"
             size="sm"
-            asChild
+            onClick={handleViewAllComments}
           >
-            <a href={`/thread/${threadId}`}>View all {commentCount} comments</a>
+            View all {commentCount} comments
           </Button>
         </div>
       )}
