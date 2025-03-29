@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import ThreadCard from "@/components/ThreadCard";
@@ -11,84 +11,164 @@ import {
   Clock, 
   Flame, 
   MessageSquare, 
-  PlusCircle 
+  PlusCircle,
+  Loader2
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
-// Sample data
-const sampleThreads = [
-  {
-    id: 1,
-    title: "What's your favorite development stack for building modern web applications?",
-    content: "I've been experimenting with different tech stacks lately and wanted to hear what others are using. Currently I'm working with React, TypeScript, and Tailwind CSS on the frontend with Node.js and Express on the backend. What's your go-to stack and why do you prefer it?",
-    author: { name: "techEnthusiast", avatar: "/placeholder.svg" },
-    community: { name: "Technology", id: 1 },
-    votes: 127,
-    commentCount: 48,
-    tags: ["Web Development", "Programming", "Tech Stack"],
-    createdAt: "3 hours ago"
-  },
-  {
-    id: 2,
-    title: "Just got a new camera! Looking for tips on landscape photography",
-    content: "I finally upgraded my camera gear and got a Sony Alpha a7 III. I'm planning a trip to Yosemite next month and would love some tips for landscape photography. Any recommendations on lenses, settings, or composition techniques?",
-    author: { name: "photoNewbie", avatar: "/placeholder.svg" },
-    community: { name: "Photography", id: 2 },
-    votes: 89,
-    commentCount: 32,
-    tags: ["Landscape", "Camera Gear", "Photography Tips"],
-    createdAt: "5 hours ago"
-  },
-  {
-    id: 3,
-    title: "Has anyone played the new indie game 'Hollow Knight: Silksong'?",
-    content: "I've been waiting for this game for years and it's finally out! I'm about 10 hours in and I'm blown away by the level design and atmosphere. Curious to hear what others think about it compared to the original Hollow Knight.",
-    author: { name: "gamingFanatic", avatar: "/placeholder.svg" },
-    community: { name: "Gaming", id: 4 },
-    votes: 215,
-    commentCount: 87,
-    tags: ["Indie Games", "Metroidvania", "Hollow Knight"],
-    createdAt: "1 day ago"
-  },
-  {
-    id: 4,
-    title: "Book recommendations similar to Project Hail Mary by Andy Weir?",
-    content: "I just finished Project Hail Mary and absolutely loved it. The mix of hard sci-fi with character development and humor was perfect. Can anyone recommend similar books that capture that same feeling?",
-    author: { name: "bookworm42", avatar: "/placeholder.svg" },
-    community: { name: "Books", id: 5 },
-    votes: 76,
-    commentCount: 41,
-    tags: ["Sci-Fi", "Book Recommendations", "Andy Weir"],
-    createdAt: "2 days ago"
-  },
-];
+// Define thread interface based on our database schema
+interface Thread {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  community: {
+    id: string;
+    name: string;
+  };
+  author: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  votes: number;
+  commentCount: number;
+  tags: string[];
+}
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user, session } = useAuth();
   const [activeTab, setActiveTab] = useState("trending");
-  const [threads, setThreads] = useState(sampleThreads);
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user && !session) {
+      navigate("/login");
+    }
+  }, [user, session, navigate]);
+  
+  // Fetch threads from Supabase
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchThreads = async () => {
+      setIsLoading(true);
+      try {
+        // Get threads with community info
+        const { data: threadsData, error: threadsError } = await supabase
+          .from('threads')
+          .select(`
+            id, 
+            title, 
+            content, 
+            created_at,
+            communities:community_id (id, name)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (threadsError) throw threadsError;
+        
+        // Process the threads to match our frontend structure
+        const processedThreads = await Promise.all(
+          threadsData.map(async (thread) => {
+            // Get author info from profiles
+            const { data: authorData } = await supabase
+              .from('profiles')
+              .select('id, username, avatar_url')
+              .eq('id', thread.user_id)
+              .single();
+            
+            // Get vote count
+            const { count: upvotes } = await supabase
+              .from('votes')
+              .select('id', { count: 'exact' })
+              .eq('thread_id', thread.id)
+              .eq('vote_type', 'up');
+              
+            const { count: downvotes } = await supabase
+              .from('votes')
+              .select('id', { count: 'exact' })
+              .eq('thread_id', thread.id)
+              .eq('vote_type', 'down');
+            
+            // Get comment count
+            const { count: commentCount } = await supabase
+              .from('comments')
+              .select('id', { count: 'exact' })
+              .eq('thread_id', thread.id);
+            
+            // Get tags
+            const { data: tagsData } = await supabase
+              .from('thread_tags')
+              .select('tags:tag_id (name)')
+              .eq('thread_id', thread.id);
+            
+            const tags = tagsData 
+              ? tagsData.map(tag => tag.tags.name) 
+              : [];
+              
+            return {
+              id: thread.id,
+              title: thread.title,
+              content: thread.content,
+              created_at: thread.created_at,
+              community: {
+                id: thread.communities?.id || '',
+                name: thread.communities?.name || 'Unknown'
+              },
+              author: {
+                id: authorData?.id || '',
+                name: authorData?.username || 'Anonymous',
+                avatar: authorData?.avatar_url
+              },
+              votes: (upvotes || 0) - (downvotes || 0),
+              commentCount: commentCount || 0,
+              tags
+            };
+          })
+        );
+        
+        setThreads(processedThreads);
+      } catch (error) {
+        console.error('Error fetching threads:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load threads. Please try again.',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchThreads();
+  }, [user, toast]);
   
   // Sort threads based on active tab
-  useEffect(() => {
-    let sortedThreads = [...sampleThreads];
-    
+  const sortedThreads = [...threads].sort((a, b) => {
     switch (activeTab) {
       case "trending":
-        sortedThreads.sort((a, b) => b.votes + b.commentCount - (a.votes + a.commentCount));
-        break;
+        return (b.votes + b.commentCount) - (a.votes + a.commentCount);
       case "new":
-        sortedThreads = sampleThreads; // Already sorted by newest in our sample
-        break;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       case "top":
-        sortedThreads.sort((a, b) => b.votes - a.votes);
-        break;
+        return b.votes - a.votes;
       case "comments":
-        sortedThreads.sort((a, b) => b.commentCount - a.commentCount);
-        break;
+        return b.commentCount - a.commentCount;
       default:
-        break;
+        return 0;
     }
-    
-    setThreads(sortedThreads);
-  }, [activeTab]);
+  });
+  
+  if (!user) {
+    return null; // Don't render anything if not authenticated
+  }
   
   return (
     <div className="min-h-screen bg-background">
@@ -128,28 +208,49 @@ const Index = () => {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="trending" className="mt-4 space-y-4">
-              {threads.map((thread) => (
-                <ThreadCard key={thread.id} thread={thread} />
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="new" className="mt-4 space-y-4">
-              {threads.map((thread) => (
-                <ThreadCard key={thread.id} thread={thread} />
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="top" className="mt-4 space-y-4">
-              {threads.map((thread) => (
-                <ThreadCard key={thread.id} thread={thread} />
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="comments" className="mt-4 space-y-4">
-              {threads.map((thread) => (
-                <ThreadCard key={thread.id} thread={thread} />
-              ))}
+            <TabsContent value={activeTab} className="mt-4 space-y-4">
+              {isLoading ? (
+                <div className="flex justify-center items-center py-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : sortedThreads.length > 0 ? (
+                sortedThreads.map((thread) => (
+                  <ThreadCard 
+                    key={thread.id} 
+                    thread={{
+                      id: thread.id,
+                      title: thread.title,
+                      content: thread.content,
+                      author: {
+                        name: thread.author.name,
+                        avatar: thread.author.avatar
+                      },
+                      community: {
+                        name: thread.community.name,
+                        id: thread.community.id
+                      },
+                      votes: thread.votes,
+                      commentCount: thread.commentCount,
+                      tags: thread.tags,
+                      createdAt: new Date(thread.created_at).toLocaleDateString('en-US', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })
+                    }} 
+                  />
+                ))
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground">No threads found. Be the first to create one!</p>
+                  <Button asChild className="mt-4">
+                    <Link to="/create">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Create Thread
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </main>
