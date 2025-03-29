@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import ThreadCardComment from "@/components/ThreadCardComment";
@@ -316,7 +317,9 @@ const ThreadCardComments = ({
   }, [threadId, commentsToShow]);
   
   const handleViewAllComments = async () => {
-    setShowAllComments(true);
+    if (onViewAllComments) {
+      onViewAllComments();
+    }
     await fetchAllComments();
   };
   
@@ -406,6 +409,7 @@ const ThreadCardComments = ({
                 onCommentAdded={handleCommentAdded}
                 level={0}
                 maxLevel={5}
+                showOnlyOneReply={true} // Added this prop
               />
             ))}
           </div>
@@ -433,7 +437,7 @@ const ThreadCardComments = ({
           <Button 
             variant="link"
             size="sm"
-            onClick={onViewAllComments}
+            onClick={handleViewAllComments}
           >
             View all {commentCount} comments
           </Button>

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ThumbsUp, ThumbsDown, MessageSquareReply } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquareReply, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +28,7 @@ interface CommentProps {
   onCommentAdded: (newComment: any) => void;
   level?: number;  // Added nested level parameter
   maxLevel?: number; // Max level of nesting allowed
+  showOnlyOneReply?: boolean; // New prop to control reply display
 }
 
 const ThreadCardComment = ({ 
@@ -35,7 +36,8 @@ const ThreadCardComment = ({
   threadId,
   onCommentAdded,
   level = 0,
-  maxLevel = 5
+  maxLevel = 5,
+  showOnlyOneReply = false
 }: CommentProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -44,11 +46,22 @@ const ThreadCardComment = ({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [repliesExpanded, setRepliesExpanded] = useState(true);
+  const [repliesExpanded, setRepliesExpanded] = useState(false);
+  const [showMoreReplies, setShowMoreReplies] = useState(false);
   
   const hasReplies = comment.replies && comment.replies.length > 0;
   const canNestFurther = level < maxLevel - 1;
   
+  // Determine which replies to show
+  const visibleReplies = showOnlyOneReply && !showMoreReplies && comment.replies && comment.replies.length > 0
+    ? [comment.replies[0]]
+    : comment.replies;
+  
+  // Count additional replies that are hidden
+  const hiddenRepliesCount = showOnlyOneReply && !showMoreReplies && comment.replies 
+    ? comment.replies.length - 1 
+    : 0;
+
   const handleVote = async (type: 'up' | 'down') => {
     if (!user) {
       toast({
@@ -199,6 +212,10 @@ const ThreadCardComment = ({
   const toggleReplies = () => {
     setRepliesExpanded(!repliesExpanded);
   };
+  
+  const handleShowMoreReplies = () => {
+    setShowMoreReplies(true);
+  };
 
   // Get indentation based on nesting level
   const getIndentClass = () => {
@@ -315,15 +332,25 @@ const ThreadCardComment = ({
             <Collapsible open={repliesExpanded} onOpenChange={toggleReplies} className="mt-3">
               <div className="flex items-center gap-2">
                 <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 text-xs">
-                    {repliesExpanded ? "Hide" : "Show"} {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}
+                  <Button variant="ghost" size="sm" className="h-6 text-xs flex items-center">
+                    {repliesExpanded ? (
+                      <>
+                        <ChevronUp size={12} className="mr-1" />
+                        Hide replies
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown size={12} className="mr-1" />
+                        Show replies
+                      </>
+                    )}
                   </Button>
                 </CollapsibleTrigger>
               </div>
               
               <CollapsibleContent>
                 <div className={`mt-3 border-l-2 border-muted ${getIndentClass()}`}>
-                  {comment.replies.map(reply => (
+                  {visibleReplies && visibleReplies.map(reply => (
                     <ThreadCardComment
                       key={reply.id}
                       comment={{...reply, level: level + 1}}
@@ -331,8 +358,24 @@ const ThreadCardComment = ({
                       onCommentAdded={onCommentAdded}
                       level={level + 1}
                       maxLevel={maxLevel}
+                      showOnlyOneReply={showOnlyOneReply}
                     />
                   ))}
+                  
+                  {/* Show "View more replies" button when needed */}
+                  {hiddenRepliesCount > 0 && (
+                    <div className="pl-2 pt-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-xs flex items-center"
+                        onClick={handleShowMoreReplies}
+                      >
+                        <ChevronDown size={12} className="mr-1" />
+                        View {hiddenRepliesCount} more {hiddenRepliesCount === 1 ? 'reply' : 'replies'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CollapsibleContent>
             </Collapsible>
