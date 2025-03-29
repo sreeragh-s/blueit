@@ -114,7 +114,7 @@ const ThreadDetail = () => {
           <CommentsSection 
             user={user} 
             comments={comments} 
-            onSubmitComment={handleSubmitComment} 
+            onSubmitComment={(content) => handleSubmitComment(content).then(() => {})} 
           />
         </main>
       </div>

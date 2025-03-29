@@ -1,17 +1,19 @@
 
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ThumbsUp, ThumbsDown, MessageSquare, Share2, Bookmark } from "lucide-react";
-import { ThreadCardProps } from "@/types/supabase";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { MessageSquare } from "lucide-react";
+import ThreadCardHeader from "@/components/ThreadCardHeader";
+import ThreadCardBody from "@/components/ThreadCardBody";
+import ThreadVoteControls from "@/components/ThreadVoteControls";
+import ThreadActions from "@/components/ThreadActions";
 import ThreadCardComments from "@/components/ThreadCardComments";
+import { useAuth } from "@/contexts/AuthContext";
+import { useThread } from "@/hooks/use-thread";
+import { useToast } from "@/hooks/use-toast";
+import { ThreadCardProps } from "@/types/supabase";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   thread: ThreadCardProps;
@@ -22,11 +24,18 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [votes, setVotes] = useState(thread.votes);
+  const [commentCount, setCommentCount] = useState(thread.commentCount);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [saved, setSaved] = useState(false);
-  const [commentCount, setCommentCount] = useState(thread.commentCount);
   
   const threadId = thread?.id ? String(thread.id) : null;
+  
+  const { 
+    voteThread, 
+    toggleBookmark, 
+    isVoting, 
+    isBookmarking 
+  } = useThread(threadId || '');
 
   useEffect(() => {
     const checkUserInteractions = async () => {
@@ -94,66 +103,22 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
       return;
     }
     
-    try {
-      const { data: existingVoteData } = await supabase
-        .from('votes')
-        .select('*')
-        .eq('thread_id', threadId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-        
-      if (existingVoteData) {
-        if (existingVoteData.vote_type === type) {
-          await supabase
-            .from('votes')
-            .delete()
-            .eq('id', existingVoteData.id);
-          
-          setVotes(type === 'up' ? votes - 1 : votes + 1);
-          setUserVote(null);
-          
-          toast({
-            title: "Vote removed",
-            description: "Your vote has been removed",
-          });
-        } else {
-          await supabase
-            .from('votes')
-            .update({ vote_type: type })
-            .eq('id', existingVoteData.id);
-          
-          setVotes(type === 'up' ? votes + 2 : votes - 2);
-          setUserVote(type);
-          
-          toast({
-            title: "Vote updated",
-            description: `You ${type}voted this thread`,
-          });
-        }
-      } else {
-        await supabase
-          .from('votes')
-          .insert({
-            thread_id: threadId,
-            user_id: user.id,
-            vote_type: type
-          });
-        
+    const success = await voteThread(type);
+    if (success) {
+      // Update UI
+      if (userVote === type) {
+        // Remove vote
+        setVotes(type === 'up' ? votes - 1 : votes + 1);
+        setUserVote(null);
+      } else if (userVote === null) {
+        // Add new vote
         setVotes(type === 'up' ? votes + 1 : votes - 1);
         setUserVote(type);
-        
-        toast({
-          title: "Vote registered",
-          description: `You ${type}voted this thread`,
-        });
+      } else {
+        // Change vote type
+        setVotes(type === 'up' ? votes + 2 : votes - 2);
+        setUserVote(type);
       }
-    } catch (error) {
-      console.error('Error voting on thread:', error);
-      toast({
-        title: "Error",
-        description: "Failed to register your vote. Please try again.",
-        variant: "destructive"
-      });
     }
   };
 
@@ -176,48 +141,9 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
       return;
     }
     
-    try {
-      if (saved) {
-        const { data: bookmarkData } = await supabase
-          .from('bookmarks')
-          .select('id')
-          .eq('thread_id', threadId)
-          .eq('user_id', user.id)
-          .maybeSingle();
-          
-        if (bookmarkData) {
-          await supabase
-            .from('bookmarks')
-            .delete()
-            .eq('id', bookmarkData.id);
-        }
-        
-        setSaved(false);
-        toast({
-          title: "Thread unsaved",
-          description: "Thread removed from your saved items",
-        });
-      } else {
-        await supabase
-          .from('bookmarks')
-          .insert({
-            thread_id: threadId,
-            user_id: user.id
-          });
-        
-        setSaved(true);
-        toast({
-          title: "Thread saved",
-          description: "Thread added to your saved items",
-        });
-      }
-    } catch (error) {
-      console.error('Error saving/unsaving thread:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update saved status. Please try again.",
-        variant: "destructive"
-      });
+    const result = await toggleBookmark();
+    if (result !== null) {
+      setSaved(result);
     }
   };
 
@@ -247,63 +173,16 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
     <Card className="thread-card mb-4">
       <CardContent className={cn("p-4", compact ? "pb-2" : "pb-4")}>
         <div className="flex items-start">
-          <div className="flex flex-col items-center mr-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className={cn("h-8 w-8 rounded-full", userVote === 'up' ? "text-primary" : "")}
-              onClick={() => handleVote('up')}
-            >
-              <ThumbsUp size={16} />
-            </Button>
-            <span className="text-sm font-medium py-1">{votes}</span>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className={cn("h-8 w-8 rounded-full", userVote === 'down' ? "text-destructive" : "")}
-              onClick={() => handleVote('down')}
-            >
-              <ThumbsDown size={16} />
-            </Button>
-          </div>
+          <ThreadVoteControls 
+            votes={votes} 
+            userVote={userVote} 
+            isVoting={isVoting} 
+            onVote={handleVote} 
+          />
           
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <Badge variant="outline" className="hover:bg-accent">
-                <Link to={`/community/${thread.community.id}`}>
-                  c/{thread.community.name}
-                </Link>
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                Posted by u/{thread.author.name} · {thread.createdAt}
-              </span>
-            </div>
-            
-            <Link to={`/thread/${threadId}`}>
-              <h3 className="text-lg font-semibold mb-2 hover:text-primary transition-colors">
-                {thread.title}
-              </h3>
-            </Link>
-            
-            {!compact && (
-              <div className="mb-3">
-                <p className="text-foreground/90">
-                  {thread.content.length > 200 
-                    ? thread.content.substring(0, 200) + "..." 
-                    : thread.content}
-                </p>
-              </div>
-            )}
-            
-            {thread.tags && thread.tags.length > 0 && !compact && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                {thread.tags.map((tag, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            )}
+            <ThreadCardHeader thread={thread} />
+            <ThreadCardBody thread={thread} compact={compact} />
           </div>
         </div>
       </CardContent>
@@ -315,24 +194,13 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
             <span>{commentCount} Comments</span>
           </Button>
           
-          <div className="flex gap-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8"
-              onClick={handleShare}
-            >
-              <Share2 size={16} />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className={cn("h-8 w-8", saved ? "text-primary" : "")}
-              onClick={handleToggleSave}
-            >
-              <Bookmark size={16} />
-            </Button>
-          </div>
+          <ThreadActions 
+            saved={saved} 
+            isBookmarking={isBookmarking} 
+            onToggleSave={handleToggleSave}
+            onShare={handleShare}
+            commentCount={0} // Not used in this context, but required by component props
+          />
         </div>
         
         {!compact && (
