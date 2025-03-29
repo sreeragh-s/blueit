@@ -28,7 +28,7 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
           content,
           created_at,
           user_id,
-          profiles:user_id(id, username, avatar_url)
+          profiles(id, username, avatar_url)
         `)
         .eq('thread_id', threadId)
         .is('parent_id', null) // Only get top-level comments
@@ -36,6 +36,7 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
         .limit(5); // Limit to 5 most recent comments
       
       if (error) throw error;
+      if (!data) return;
       
       // Process comments to count votes
       const processedComments = await Promise.all(
@@ -54,12 +55,15 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
             .eq('comment_id', comment.id)
             .eq('vote_type', 'down');
           
+          // Safely access profiles data - if it exists and has the expected structure
+          const profile = comment.profiles;
+          
           return {
             id: comment.id,
             content: comment.content,
             author: {
-              name: comment.profiles?.username || 'Anonymous',
-              avatar: comment.profiles?.avatar_url
+              name: profile?.username || 'Anonymous',
+              avatar: profile?.avatar_url
             },
             votes: ((upvotes || 0) - (downvotes || 0)),
             createdAt: new Date(comment.created_at).toLocaleDateString('en-US', {
