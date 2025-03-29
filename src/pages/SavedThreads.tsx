@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import Sidebar from "@/components/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBookmarkedThreads } from "@/hooks/use-bookmarked-threads";
 import ThreadFilterTabs from "@/components/ThreadFilterTabs";

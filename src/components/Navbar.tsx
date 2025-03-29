@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -24,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Bell, Menu, LogOut, Settings, User, Bookmark } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import Sidebar from "./Sidebar";
+import Sidebar from "./sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {

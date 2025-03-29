@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import Sidebar from "@/components/sidebar";
 import CreateThreadForm from "@/components/CreateThreadForm";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -59,7 +58,6 @@ const Settings = () => {
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   
   useEffect(() => {
-    // Redirect if not logged in
     if (!user) {
       navigate("/login");
       toast({
@@ -135,7 +133,6 @@ const Settings = () => {
     setIsUpdatingProfile(true);
     
     try {
-      // Upload avatar if changed
       let avatarUrl = profile?.avatar_url;
       if (avatarFile) {
         const fileExt = avatarFile.name.split('.').pop();
@@ -151,7 +148,6 @@ const Settings = () => {
           throw uploadError;
         }
         
-        // Get the public URL
         const { data } = supabase.storage
           .from('avatars')
           .getPublicUrl(filePath);
@@ -159,7 +155,6 @@ const Settings = () => {
         avatarUrl = data.publicUrl;
       }
       
-      // Update profile
       const { error } = await supabase
         .from('profiles')
         .update({

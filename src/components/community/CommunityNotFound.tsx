@@ -2,7 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import Sidebar from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
 
 const CommunityNotFound = () => {

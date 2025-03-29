@@ -25,7 +25,10 @@ const Sidebar = ({ className }: SidebarProps) => {
       <CreateCommunityDialog 
         open={isCreateCommunityOpen} 
         onOpenChange={setIsCreateCommunityOpen} 
-        onCommunityCreated={() => {}} // The function is defined in SidebarCommunityList
+        onCommunityCreated={async () => {
+          // Modified to return a Promise to match the expected type
+          return Promise.resolve();
+        }} 
       />
     </>
   );

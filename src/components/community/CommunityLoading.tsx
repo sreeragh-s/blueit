@@ -1,7 +1,7 @@
 
 import React from "react";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import Sidebar from "@/components/sidebar";
 import { Loader2 } from "lucide-react";
 
 const CommunityLoading = () => {
