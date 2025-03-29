@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -66,6 +67,7 @@ const ThreadDetail = () => {
           title,
           content,
           created_at,
+          updated_at,
           user_id,
           community_id,
           communities:community_id(id, name),
@@ -77,8 +79,8 @@ const ThreadDetail = () => {
       if (threadError) throw threadError;
       if (!threadData) throw new Error("Thread not found");
       
-      // Cast to our query result type
-      const typedThreadData = threadData as ThreadQueryResult;
+      // Convert to our query result type with proper type assertion
+      const typedThreadData = threadData as unknown as ThreadQueryResult;
       
       // Count upvotes
       const { count: upvotes } = await supabase
@@ -110,6 +112,12 @@ const ThreadDetail = () => {
         .select('id', { count: 'exact' })
         .eq('thread_id', threadId);
       
+      const formattedDate = new Date(typedThreadData.created_at).toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+
       setThread({
         ...typedThreadData,
         author: {
@@ -124,11 +132,7 @@ const ThreadDetail = () => {
         votes: ((upvotes || 0) - (downvotes || 0)),
         commentCount: commentCount || 0,
         tags: tags,
-        createdAt: new Date(typedThreadData.created_at).toLocaleDateString('en-US', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric'
-        })
+        createdAt: formattedDate
       });
       
       setVotes((upvotes || 0) - (downvotes || 0));
@@ -153,6 +157,8 @@ const ThreadDetail = () => {
           id,
           content,
           created_at,
+          updated_at,
+          thread_id,
           parent_id,
           user_id,
           profiles:user_id(id, username, avatar_url)
@@ -165,8 +171,8 @@ const ThreadDetail = () => {
       // Process comments to count votes
       const processedComments = await Promise.all(
         commentsData.map(async (comment) => {
-          // Cast to our query result type
-          const typedComment = comment as CommentQueryResult;
+          // Cast to our query result type with proper type assertion
+          const typedComment = comment as unknown as CommentQueryResult;
           
           // Count upvotes for comment
           const { count: upvotes } = await supabase
@@ -439,7 +445,7 @@ const ThreadDetail = () => {
                     </Link>
                   </Badge>
                   <span className="text-sm text-muted-foreground">
-                    Posted by u/{thread.author.name} · {thread.createdAt}
+                    Posted by u/{thread.author.name} · {thread.createdAt || ''}
                   </span>
                 </div>
                 

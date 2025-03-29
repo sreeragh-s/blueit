@@ -26,6 +26,7 @@ export interface ThreadWithRelations extends Thread {
   votes: number;
   commentCount: number;
   tags: string[];
+  createdAt?: string; // Add this optional field for formatted date string
 }
 
 // Helper interface for ThreadCard component
@@ -48,11 +49,36 @@ export interface ThreadCardProps {
 }
 
 // Enhanced types for Supabase query results
-export interface ThreadQueryResult extends Thread {
-  profiles?: Profile | null;
-  communities?: Community | null;
+export interface ThreadQueryResult {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  community_id: string;
+  communities?: {
+    id: string;
+    name: string;
+  } | null;
+  profiles?: {
+    id: string;
+    username: string;
+    avatar_url?: string;
+  } | null;
 }
 
-export interface CommentQueryResult extends Comment {
-  profiles?: Profile | null;
+export interface CommentQueryResult {
+  id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  thread_id: string;
+  parent_id?: string | null;
+  user_id: string;
+  profiles?: {
+    id: string;
+    username: string;
+    avatar_url?: string;
+  } | null;
 }
