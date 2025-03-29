@@ -349,11 +349,58 @@ const ThreadCardComments = ({
     await fetchAllComments();
   };
   
-  const handleCommentAdded = () => {
-    console.log("[ThreadCardComments] Comment added, refreshing comments");
-    fetchComments();
-    if (showAllComments) {
-      fetchAllComments();
+  const handleCommentAdded = (newComment: any) => {
+    console.log("[ThreadCardComments] Comment added:", newComment);
+    
+    // Update comment count
+    if (onCommentCountChange) {
+      onCommentCountChange(commentCount + 1);
+    }
+    
+    if (newComment.parent_id) {
+      // This is a reply to an existing comment
+      if (showAllComments) {
+        // Update allComments state
+        setAllComments(prevComments => {
+          return prevComments.map(comment => {
+            if (comment.id === newComment.parent_id) {
+              return {
+                ...comment,
+                replies: [newComment, ...(comment.replies || [])]
+              };
+            }
+            return comment;
+          });
+        });
+      } else {
+        // Update comments state
+        setComments(prevComments => {
+          return prevComments.map(comment => {
+            if (comment.id === newComment.parent_id) {
+              return {
+                ...comment,
+                replies: [newComment, ...(comment.replies || [])]
+              };
+            }
+            return comment;
+          });
+        });
+      }
+    } else {
+      // This is a top-level comment
+      if (showAllComments) {
+        // Add to the beginning of allComments
+        setAllComments(prevComments => [
+          { ...newComment, replies: [] },
+          ...prevComments
+        ]);
+      } else {
+        // Add to the beginning of comments
+        setComments(prevComments => [
+          { ...newComment, replies: [] },
+          ...prevComments
+        ]);
+      }
     }
   };
   

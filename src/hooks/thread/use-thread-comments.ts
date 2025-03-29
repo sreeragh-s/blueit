@@ -163,7 +163,7 @@ export const useThreadComments = (threadId: string) => {
       
       console.log("handleSubmitComment - New comment added:", newComment);
       
-      // Add the new comment to the UI immediately
+      // Create processed comment object to return
       const processedComment = {
         id: newComment.id,
         content: newComment.content,
@@ -174,11 +174,12 @@ export const useThreadComments = (threadId: string) => {
         votes: 0,
         createdAt: "Just now",
         parent_id: parentId,
+        user_id: user.id,
         replies: []
       };
       
+      // Update comments state based on whether it's a reply or top-level comment
       if (parentId) {
-        // If this is a reply, find parent and add to its replies
         setComments(prevComments => {
           return prevComments.map(comment => {
             if (comment.id === parentId) {
@@ -191,8 +192,7 @@ export const useThreadComments = (threadId: string) => {
           });
         });
       } else {
-        // If top-level comment, add to beginning of list
-        setComments([processedComment, ...comments]);
+        setComments(prevComments => [processedComment, ...prevComments]);
       }
       
       return processedComment;

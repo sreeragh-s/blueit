@@ -18,10 +18,11 @@ interface CommentProps {
     };
     votes: number;
     createdAt: string;
+    parent_id?: string | null;
+    user_id?: string;
   };
-  onReplyClick?: () => void;
   threadId: string;
-  onCommentAdded?: () => void;
+  onCommentAdded: (newComment: any) => void;  // Updated to receive the new comment
 }
 
 const ThreadCardComment = ({ 
@@ -146,12 +147,25 @@ const ThreadCardComment = ({
       
       console.log("Reply submitted successfully:", newReply);
       
+      // Create the processed reply object
+      const processedReply = {
+        id: newReply.id,
+        content: newReply.content,
+        author: {
+          name: user.user_metadata.username || 'Anonymous',
+          avatar: user.user_metadata.avatar_url
+        },
+        votes: 0,
+        createdAt: "Just now",
+        parent_id: comment.id,
+        user_id: user.id
+      };
+      
       setReplyText("");
       setShowReplyForm(false);
       
-      if (onCommentAdded) {
-        onCommentAdded();
-      }
+      // Pass the new reply to the parent component
+      onCommentAdded(processedReply);
       
       toast({
         title: "Reply posted",

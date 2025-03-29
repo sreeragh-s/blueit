@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 interface ThreadCardCommentFormProps {
   threadId: string;  // This should be a UUID from the database
-  onCommentAdded: () => void;
+  onCommentAdded: (newComment: any) => void;  // Updated to receive the new comment
 }
 
 const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFormProps) => {
@@ -80,8 +80,23 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
       
       console.log("[ThreadCardCommentForm] Comment successfully added:", newComment);
       
+      // Create the processed comment object
+      const processedComment = {
+        id: newComment.id,
+        content: newComment.content,
+        author: {
+          name: user.user_metadata.username || 'Anonymous',
+          avatar: user.user_metadata.avatar_url
+        },
+        votes: 0,
+        createdAt: "Just now",
+        parent_id: null,
+        user_id: user.id,
+        replies: []
+      };
+      
       setCommentText("");
-      onCommentAdded();
+      onCommentAdded(processedComment);
       
       toast({
         title: "Comment posted",

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -117,6 +118,10 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
     shareThread(threadId || '');
   };
 
+  const handleCommentCountChange = (count: number) => {
+    setCommentCount(count);
+  };
+
   if (!thread || !threadId) {
     return null;
   }
@@ -158,7 +163,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
           <ThreadCardComments 
             threadId={threadId} 
             commentCount={commentCount} 
-            onCommentCountChange={setCommentCount} 
+            onCommentCountChange={handleCommentCountChange} 
           />
         )}
       </CardFooter>
