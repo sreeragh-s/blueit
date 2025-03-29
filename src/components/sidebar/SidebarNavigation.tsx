@@ -16,7 +16,7 @@ const SidebarNavigation = () => {
       </h2>
       <div className="space-y-1">
         <Button 
-          variant={location.pathname === "/" ? "secondary" : "ghost"} 
+          variant={location.pathname === "/" ? "default" : "ghost"} 
           className="w-full justify-start" 
           asChild
         >
@@ -26,7 +26,7 @@ const SidebarNavigation = () => {
           </Link>
         </Button>
         <Button 
-          variant={location.pathname === "/explore" && !isMyPostsActive ? "secondary" : "ghost"} 
+          variant={location.pathname === "/explore" && !isMyPostsActive ? "default" : "ghost"} 
           className="w-full justify-start" 
           asChild
         >
@@ -38,7 +38,7 @@ const SidebarNavigation = () => {
         {user && (
           <>
             <Button 
-              variant={location.pathname === "/saved" ? "secondary" : "ghost"} 
+              variant={location.pathname === "/saved" ? "default" : "ghost"} 
               className="w-full justify-start" 
               asChild
             >
@@ -48,7 +48,7 @@ const SidebarNavigation = () => {
               </Link>
             </Button>
             <Button 
-              variant={isMyPostsActive ? "secondary" : "ghost"} 
+              variant={isMyPostsActive ? "default" : "ghost"} 
               className="w-full justify-start" 
               asChild
             >
