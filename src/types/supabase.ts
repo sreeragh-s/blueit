@@ -29,9 +29,9 @@ export interface ThreadWithRelations extends Thread {
   createdAt?: string; // Add this optional field for formatted date string
 }
 
-// Helper interface for ThreadCard component
+// Helper interface for ThreadCard component - updated to use string for id fields
 export interface ThreadCardProps {
-  id: number;
+  id: string; // Changed from number to string to match UUID format
   title: string;
   content: string;
   author: {
@@ -40,7 +40,7 @@ export interface ThreadCardProps {
   };
   community: {
     name: string;
-    id: number;
+    id: string; // Changed from number to string to match UUID format
   };
   votes: number;
   commentCount: number;

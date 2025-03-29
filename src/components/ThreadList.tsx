@@ -28,7 +28,7 @@ const ThreadList = ({ threads }: ThreadListProps) => {
           <ThreadCard 
             key={thread.id} 
             thread={{
-              id: thread.id, // Directly use the id from the database, preserving type
+              id: thread.id, // Now correctly matching the string type expected by ThreadCardProps
               title: thread.title,
               content: thread.content,
               author: {
@@ -37,7 +37,7 @@ const ThreadList = ({ threads }: ThreadListProps) => {
               },
               community: {
                 name: thread.community.name,
-                id: thread.community.id
+                id: thread.community.id // Now correctly matching the string type expected by ThreadCardProps
               },
               votes: thread.votes,
               commentCount: thread.commentCount,
