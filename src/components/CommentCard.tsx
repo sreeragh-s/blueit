@@ -31,7 +31,6 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
   
   const { votes, setVotes, userVote, handleVote } = useCommentVote(comment.id);
   
-  // Initialize votes from prop
   useEffect(() => {
     setVotes(comment.votes);
   }, [comment.votes, setVotes]);
@@ -42,27 +41,33 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
   };
   
   const toggleReplyForm = () => {
-    console.log("Reply button clicked:", {
+    console.group(`Toggle Reply Form for Comment ${comment.id}`);
+    console.log("Current state:", {
       currentShowReplyForm: showReplyForm,
       commentId: comment.id,
-      level: level
+      level: level,
+      maxLevel: 5
     });
     
-    // Add more detailed logging
     setShowReplyForm(prev => {
-      console.log("Setting showReplyForm from", prev, "to", !prev);
-      return !prev;
+      const newState = !prev;
+      console.log(`Changing showReplyForm from ${prev} to ${newState}`);
+      console.trace('Toggle Reply Form Stack Trace');
+      return newState;
     });
     
-    // Add additional debugging information
-    console.trace("Toggle Reply Form Stack Trace");
+    console.groupEnd();
   };
   
-  // Limit nesting to 5 levels deep
   const maxLevel = 5;
   
   return (
-    <div className={cn("comment-card bg-card border rounded-lg p-4", level > 0 && "ml-6 mt-3")}>
+    <div 
+      className={cn("comment-card bg-card border rounded-lg p-4", level > 0 && "ml-6 mt-3")}
+      data-comment-id={comment.id}
+      data-current-nesting-level={level}
+      data-max-nesting-level={maxLevel}
+    >
       <div className="flex items-start gap-3">
         <Avatar className="h-8 w-8">
           <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
@@ -83,12 +88,19 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
             votes={votes}
             userVote={userVote}
             onVote={handleVote}
-            onReply={toggleReplyForm}
+            onReply={() => {
+              console.log('Reply button clicked', { 
+                commentId: comment.id, 
+                currentShowReplyForm: showReplyForm,
+                level: level,
+                maxLevel: maxLevel
+              });
+              toggleReplyForm();
+            }}
             showReplyButton={level < maxLevel}
           />
           
-          {/* Add more explicit logging for reply form visibility */}
-          {console.log("Rendering reply form:", {
+          {console.log('Rendering reply form:', {
             showReplyForm,
             commentId: comment.id,
             level: level
@@ -97,7 +109,6 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
           {showReplyForm && (
             <div 
               className="mt-3 border-l-2 border-primary pl-3"
-              // Add data attribute for easier debugging
               data-comment-id={comment.id}
               data-reply-form-visible={showReplyForm}
             >
