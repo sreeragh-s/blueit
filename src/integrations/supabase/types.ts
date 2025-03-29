@@ -320,12 +320,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      is_member_of_community: {
-        Args: {
-          community_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
