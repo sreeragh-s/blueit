@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCommentVote } from "@/hooks/use-comment-vote";
@@ -61,6 +62,15 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
   
   const maxLevel = 5;
   
+  // Debug log outside of render to avoid ReactNode error
+  useEffect(() => {
+    console.log('Rendering reply form:', {
+      showReplyForm,
+      commentId: comment.id,
+      level: level
+    });
+  }, [showReplyForm, comment.id, level]);
+  
   return (
     <div 
       className={cn("comment-card bg-card border rounded-lg p-4", level > 0 && "ml-6 mt-3")}
@@ -99,12 +109,6 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
             }}
             showReplyButton={level < maxLevel}
           />
-          
-          {console.log('Rendering reply form:', {
-            showReplyForm,
-            commentId: comment.id,
-            level: level
-          })}
           
           {showReplyForm && (
             <div 

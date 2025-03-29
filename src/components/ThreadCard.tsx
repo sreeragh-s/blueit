@@ -21,6 +21,7 @@ interface Props {
 
 const ThreadCard = ({ thread, compact = false }: Props) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [commentCount, setCommentCount] = useState(thread.commentCount);
   const [showComments, setShowComments] = useState(false);
   const [saved, setSaved] = useState(false);
