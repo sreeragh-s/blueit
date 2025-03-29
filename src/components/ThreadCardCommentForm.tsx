@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 interface ThreadCardCommentFormProps {
   threadId: string;
@@ -32,18 +33,14 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
     try {
       setIsSubmitting(true);
       
-      // Convert numeric IDs to UUID format if needed
-      const formattedThreadId = formatThreadId(threadId);
-      
-      if (!formattedThreadId) {
-        throw new Error(`Invalid thread ID format: ${threadId}`);
-      }
+      // No need for format conversion, just use the thread ID directly
+      // Supabase will handle the error if the ID is invalid
       
       const { data: newComment, error } = await supabase
         .from('comments')
         .insert({
           content: commentText,
-          thread_id: formattedThreadId,
+          thread_id: threadId,
           user_id: user.id
         })
         .select()
@@ -70,19 +67,6 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
     }
   };
 
-  // Helper function to convert various ID formats to valid UUIDs or properly format them
-  const formatThreadId = (id: string): string | null => {
-    // Check if it's already a valid UUID
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (uuidRegex.test(id)) {
-      return id;
-    }
-    
-    // If it's a numeric ID, assume it's already a valid ID in your database
-    // We'll return it as is, letting Supabase handle any conversion/validation
-    return id;
-  };
-
   if (!user) {
     return (
       <div className="p-3 text-center text-sm text-muted-foreground">
@@ -105,10 +89,18 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
             placeholder="What are your thoughts?"
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
-            onBlur={handleSubmitComment}
             className="min-h-[80px] w-full text-sm"
             disabled={isSubmitting}
           />
+          <div className="mt-2 flex justify-end">
+            <Button 
+              size="sm" 
+              onClick={handleSubmitComment}
+              disabled={!commentText.trim() || isSubmitting}
+            >
+              {isSubmitting ? "Posting..." : "Comment"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

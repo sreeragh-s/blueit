@@ -26,14 +26,6 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
   const fetchComments = async () => {
     if (!threadId) return;
     
-    // Format thread ID for database compatibility
-    const formattedThreadId = formatThreadId(threadId);
-    
-    if (!formattedThreadId) {
-      console.error(`Invalid thread ID format: ${threadId}`);
-      return;
-    }
-    
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -45,7 +37,7 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
           user_id,
           profiles:user_id(id, username, avatar_url)
         `)
-        .eq('thread_id', formattedThreadId)
+        .eq('thread_id', threadId)
         .is('parent_id', null) // Only get top-level comments
         .order('created_at', { ascending: false })
         .limit(5); // Limit to 5 most recent comments
@@ -99,19 +91,6 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
     } finally {
       setLoading(false);
     }
-  };
-  
-  // Helper function to convert various ID formats to valid IDs for database queries
-  const formatThreadId = (id: string): string | null => {
-    // Check if it's already a valid UUID
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (uuidRegex.test(id)) {
-      return id;
-    }
-    
-    // If it's a numeric ID, assume it's already a valid ID in your database
-    // We'll return it as is, letting Supabase handle any conversion/validation
-    return id;
   };
   
   useEffect(() => {
