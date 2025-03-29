@@ -106,7 +106,7 @@ export const useThreadComments = (threadId: string) => {
     }
   };
 
-  const handleSubmitComment = async (user: User | null, content: string) => {
+  const handleSubmitComment = async (user: User | null, content: string, parentId?: string) => {
     if (!user) {
       toast({
         title: "Sign in required",
@@ -122,7 +122,8 @@ export const useThreadComments = (threadId: string) => {
     console.log("handleSubmitComment - Inputs:", {
       threadId,
       userId: user.id,
-      content
+      content,
+      parentId
     });
     
     // Validate UUID format
@@ -138,13 +139,20 @@ export const useThreadComments = (threadId: string) => {
     }
     
     try {
+      const commentData: any = {
+        content,
+        thread_id: threadId,
+        user_id: user.id
+      };
+      
+      // Add parent_id if this is a reply
+      if (parentId) {
+        commentData.parent_id = parentId;
+      }
+      
       const { data: newComment, error } = await supabase
         .from('comments')
-        .insert({
-          content,
-          thread_id: threadId,
-          user_id: user.id
-        })
+        .insert(commentData)
         .select()
         .single();
       
@@ -165,10 +173,27 @@ export const useThreadComments = (threadId: string) => {
         },
         votes: 0,
         createdAt: "Just now",
+        parent_id: parentId,
         replies: []
       };
       
-      setComments([processedComment, ...comments]);
+      if (parentId) {
+        // If this is a reply, find parent and add to its replies
+        setComments(prevComments => {
+          return prevComments.map(comment => {
+            if (comment.id === parentId) {
+              return {
+                ...comment,
+                replies: [processedComment, ...(comment.replies || [])]
+              };
+            }
+            return comment;
+          });
+        });
+      } else {
+        // If top-level comment, add to beginning of list
+        setComments([processedComment, ...comments]);
+      }
       
       return processedComment;
     } catch (error) {

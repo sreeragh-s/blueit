@@ -1,9 +1,9 @@
 
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ThumbsUp, ThumbsDown, MessageSquare } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquareReply } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -20,13 +20,22 @@ interface CommentProps {
     createdAt: string;
   };
   onReplyClick?: () => void;
+  threadId: string;
+  onCommentAdded?: () => void;
 }
 
-const ThreadCardComment = ({ comment, onReplyClick }: CommentProps) => {
+const ThreadCardComment = ({ 
+  comment, 
+  threadId,
+  onCommentAdded 
+}: CommentProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [votes, setVotes] = useState(comment.votes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
+  const [showReplyForm, setShowReplyForm] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleVote = async (type: 'up' | 'down') => {
     if (!user) {
@@ -93,6 +102,73 @@ const ThreadCardComment = ({ comment, onReplyClick }: CommentProps) => {
     }
   };
 
+  const handleReplyClick = () => {
+    console.log("Reply clicked for comment:", comment.id);
+    setShowReplyForm(!showReplyForm);
+  };
+
+  const handleSubmitReply = async () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "You need to sign in to reply to comments.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!replyText.trim()) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      console.log("Submitting reply to comment:", {
+        parentId: comment.id,
+        threadId,
+        content: replyText
+      });
+      
+      const { data: newReply, error } = await supabase
+        .from('comments')
+        .insert({
+          content: replyText,
+          thread_id: threadId,
+          user_id: user.id,
+          parent_id: comment.id
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error submitting reply:", error);
+        throw error;
+      }
+      
+      console.log("Reply submitted successfully:", newReply);
+      
+      setReplyText("");
+      setShowReplyForm(false);
+      
+      if (onCommentAdded) {
+        onCommentAdded();
+      }
+      
+      toast({
+        title: "Reply posted",
+        description: "Your reply has been posted successfully."
+      });
+    } catch (error) {
+      console.error("Failed to submit reply:", error);
+      toast({
+        title: "Error",
+        description: "Failed to post your reply. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="py-3 border-b last:border-b-0">
       <div className="flex items-start gap-2">
@@ -134,12 +210,54 @@ const ThreadCardComment = ({ comment, onReplyClick }: CommentProps) => {
               variant="ghost" 
               size="sm" 
               className="h-6 text-xs"
-              onClick={onReplyClick}
+              onClick={handleReplyClick}
+              data-comment-id={comment.id}
             >
-              <MessageSquare size={12} className="mr-1" />
+              <MessageSquareReply size={12} className="mr-1" />
               Reply
             </Button>
           </div>
+          
+          {showReplyForm && (
+            <div className="mt-3">
+              <div className="flex items-start gap-2">
+                <Avatar className="h-5 w-5">
+                  <AvatarImage src={user?.user_metadata?.avatar_url} alt="Your Avatar" />
+                  <AvatarFallback>
+                    {user?.user_metadata?.username?.slice(0, 1).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <textarea
+                    className="min-h-[60px] w-full text-sm p-2 rounded-md border border-input resize-none"
+                    placeholder="Write a reply..."
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  <div className="mt-2 flex justify-end">
+                    <Button 
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs mr-2"
+                      onClick={() => setShowReplyForm(false)}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      className="h-7 text-xs"
+                      onClick={handleSubmitReply}
+                      disabled={!replyText.trim() || isSubmitting}
+                    >
+                      {isSubmitting ? "Posting..." : "Reply"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

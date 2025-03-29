@@ -156,7 +156,12 @@ const ThreadCardComments = ({
         ) : comments.length > 0 ? (
           <div className="space-y-3">
             {comments.map((comment) => (
-              <ThreadCardComment key={comment.id} comment={comment} />
+              <ThreadCardComment 
+                key={comment.id} 
+                comment={comment} 
+                threadId={threadId}
+                onCommentAdded={handleCommentAdded}
+              />
             ))}
           </div>
         ) : (
