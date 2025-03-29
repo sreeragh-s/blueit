@@ -61,21 +61,19 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
-        {isMobile && (
-          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden mr-2">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-[80vw] max-w-[300px]">
-              <div className="h-full py-4 overflow-auto">
-                <Sidebar className="border-0" />
-              </div>
-            </SheetContent>
-          </Sheet>
-        )}
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="md:hidden mr-2">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-[80vw] max-w-[300px]">
+            <div className="h-full py-4 overflow-auto">
+              <Sidebar className="border-0" />
+            </div>
+          </SheetContent>
+        </Sheet>
         
         <div className="flex items-center gap-2 mr-4">
           <Link to="/" className="flex items-center space-x-2">

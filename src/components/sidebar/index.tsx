@@ -2,7 +2,6 @@
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
-import { PlusCircle } from "lucide-react";
 import CreateCommunityDialog from "@/components/CreateCommunityDialog";
 import SidebarNavigation from "./SidebarNavigation";
 import SidebarCommunityList from "./SidebarCommunityList";
@@ -44,7 +43,7 @@ const Sidebar = ({ className }: SidebarProps) => {
   
   // Desktop sidebar
   return (
-    <div className={cn("w-[260px] shrink-0 border-r bg-background h-screen", className)}>
+    <div className={cn("w-[260px] shrink-0 border-r bg-background h-screen hidden md:block", className)}>
       <div className="flex flex-col h-full overflow-hidden">
         {sidebarContent}
       </div>
