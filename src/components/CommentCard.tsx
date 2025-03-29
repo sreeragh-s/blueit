@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,9 +41,9 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Check if user has voted on this comment
-  useState(() => {
+  useEffect(() => {
     const checkUserVote = async () => {
-      if (!user) return;
+      if (!user || !comment.id) return;
       
       try {
         const { data } = await supabase
@@ -63,7 +62,7 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
     };
     
     checkUserVote();
-  });
+  }, [user, comment.id]);
   
   const handleVote = async (type: 'up' | 'down') => {
     if (!user) {

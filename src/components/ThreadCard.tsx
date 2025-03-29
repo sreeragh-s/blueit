@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,24 +22,29 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
   const [votes, setVotes] = useState(thread.votes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [saved, setSaved] = useState(false);
+  const threadId = String(thread.id);
 
   // Check if the user has voted on or saved this thread
   useEffect(() => {
-    if (user) {
-      checkUserVote();
-      checkIfSaved();
-    }
-  }, [user]);
+    const checkUserInteractions = async () => {
+      if (!user || !threadId || threadId === 'NaN') return;
+      
+      await checkUserVote();
+      await checkIfSaved();
+    };
+    
+    checkUserInteractions();
+  }, [user, threadId]);
 
   const checkUserVote = async () => {
-    if (!user) return;
+    if (!user || !threadId || threadId === 'NaN') return;
     
     try {
       const { data } = await supabase
         .from('votes')
         .select('vote_type')
         .eq('user_id', user.id)
-        .eq('thread_id', thread.id.toString())
+        .eq('thread_id', threadId)
         .single();
       
       if (data) {
@@ -52,14 +56,14 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
   };
 
   const checkIfSaved = async () => {
-    if (!user) return;
+    if (!user || !threadId || threadId === 'NaN') return;
     
     try {
       const { data } = await supabase
         .from('bookmarks')
         .select('id')
         .eq('user_id', user.id)
-        .eq('thread_id', thread.id.toString())
+        .eq('thread_id', threadId)
         .single();
       
       setSaved(!!data);
@@ -210,6 +214,11 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
       description: "Thread link copied to clipboard",
     });
   };
+
+  // Prevent rendering with invalid thread IDs
+  if (!thread.id || isNaN(Number(thread.id))) {
+    return null;
+  }
 
   return (
     <Card className="thread-card mb-4">

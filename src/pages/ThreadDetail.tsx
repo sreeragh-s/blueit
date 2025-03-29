@@ -1,5 +1,6 @@
 
 import { useParams, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,14 +21,20 @@ const ThreadDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Check if threadId is valid
+  // Check if threadId is valid and navigate away if not - moved to useEffect
+  useEffect(() => {
+    if (!threadId || isNaN(Number(threadId))) {
+      navigate('/');
+      toast({
+        title: "Invalid thread",
+        description: "The thread you're trying to view doesn't exist.",
+        variant: "destructive"
+      });
+    }
+  }, [threadId, navigate, toast]);
+
+  // Prevent rendering the rest of the component if threadId is invalid
   if (!threadId || isNaN(Number(threadId))) {
-    navigate('/');
-    toast({
-      title: "Invalid thread",
-      description: "The thread you're trying to view doesn't exist.",
-      variant: "destructive"
-    });
     return null;
   }
 
