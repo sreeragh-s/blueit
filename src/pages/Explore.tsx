@@ -28,7 +28,7 @@ const Explore = () => {
       try {
         setLoading(true);
         
-        // Fetch all communities with a simpler approach
+        // Fetch all communities directly without joining with members table
         const { data: communitiesData, error: communitiesError } = await supabase
           .from('communities')
           .select('*');
@@ -44,40 +44,14 @@ const Explore = () => {
           return;
         }
         
-        // Process communities to include member count with a more direct approach
-        const enhancedCommunitiesPromises = communitiesData.map(async (community) => {
-          try {
-            // Get member count - using a separate try/catch to handle potential errors
-            const { count, error: countError } = await supabase
-              .from('community_members')
-              .select('*', { count: 'exact', head: true })
-              .eq('community_id', community.id);
-            
-            if (countError) {
-              console.error(`Error counting members for community ${community.id}:`, countError);
-              return {
-                ...community,
-                memberCount: 0,
-                tags: ["Community"]
-              };
-            }
-            
-            return {
-              ...community,
-              memberCount: count || 0,
-              tags: ["Community"] // Default tag
-            };
-          } catch (error) {
-            console.error(`Error processing community ${community.id}:`, error);
-            return {
-              ...community,
-              memberCount: 0,
-              tags: ["Community"]
-            };
-          }
-        });
+        // Create enhanced communities with default member count
+        // Instead of querying for member counts which causes the RLS recursion issue
+        const enhancedCommunities = communitiesData.map(community => ({
+          ...community,
+          memberCount: 0, // Default value since we can't query member count right now
+          tags: ["Community"] // Default tag
+        }));
         
-        const enhancedCommunities = await Promise.all(enhancedCommunitiesPromises);
         setCommunities(enhancedCommunities);
       } catch (error) {
         console.error('Error in fetchCommunities:', error);
@@ -137,7 +111,7 @@ const Explore = () => {
                       style={
                         community.banner_image 
                           ? { backgroundImage: `url(${community.banner_image})` } 
-                          : { backgroundImage: `linear-gradient(to right, var(--blue-500), var(--purple-500))` }
+                          : { backgroundImage: `linear-gradient(to right, hsl(var(--primary) / 70%), hsl(var(--secondary) / 70%))` }
                       }
                     />
                     
