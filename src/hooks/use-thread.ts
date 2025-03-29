@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Vote, Bookmark } from "@/types/supabase";
 
 export const useThread = (threadId: string) => {
   const { user } = useAuth();
@@ -22,8 +23,8 @@ export const useThread = (threadId: string) => {
 
     setIsVoting(true);
     try {
-      // Check if user has already voted
-      const { data: existingVote, error: voteError } = await supabase
+      // Check if user has already voted using the untyped query
+      const { data: existingVoteData, error: voteError } = await supabase
         .from('votes')
         .select('*')
         .eq('thread_id', threadId)
@@ -34,6 +35,9 @@ export const useThread = (threadId: string) => {
         console.error('Error checking vote:', voteError);
         throw voteError;
       }
+
+      // Cast the result to our Vote type
+      const existingVote = existingVoteData as Vote | null;
 
       if (existingVote) {
         if (existingVote.vote_type === voteType) {
@@ -48,6 +52,10 @@ export const useThread = (threadId: string) => {
             throw deleteError;
           }
           
+          toast({
+            title: "Vote removed",
+            description: "Your vote has been removed",
+          });
           return true;
         } else {
           // Update vote if changing vote type
@@ -61,6 +69,10 @@ export const useThread = (threadId: string) => {
             throw updateError;
           }
           
+          toast({
+            title: "Vote updated",
+            description: `You ${voteType}voted this thread`,
+          });
           return true;
         }
       } else {
@@ -78,6 +90,10 @@ export const useThread = (threadId: string) => {
           throw insertError;
         }
         
+        toast({
+          title: "Vote registered",
+          description: `You ${voteType}voted this thread`,
+        });
         return true;
       }
     } catch (error) {
@@ -105,8 +121,8 @@ export const useThread = (threadId: string) => {
 
     setIsBookmarking(true);
     try {
-      // Check if already bookmarked
-      const { data: existingBookmark, error: bookmarkError } = await supabase
+      // Check if already bookmarked using the untyped query
+      const { data: existingBookmarkData, error: bookmarkError } = await supabase
         .from('bookmarks')
         .select('*')
         .eq('thread_id', threadId)
@@ -117,6 +133,9 @@ export const useThread = (threadId: string) => {
         console.error('Error checking bookmark:', bookmarkError);
         throw bookmarkError;
       }
+
+      // Cast the result to our Bookmark type
+      const existingBookmark = existingBookmarkData as Bookmark | null;
 
       if (existingBookmark) {
         // Remove bookmark
@@ -130,6 +149,10 @@ export const useThread = (threadId: string) => {
           throw deleteError;
         }
         
+        toast({
+          title: "Bookmark removed",
+          description: "Thread removed from your bookmarks",
+        });
         return false; // not bookmarked anymore
       } else {
         // Add bookmark
@@ -145,6 +168,10 @@ export const useThread = (threadId: string) => {
           throw insertError;
         }
         
+        toast({
+          title: "Bookmark added",
+          description: "Thread added to your bookmarks",
+        });
         return true; // now bookmarked
       }
     } catch (error) {

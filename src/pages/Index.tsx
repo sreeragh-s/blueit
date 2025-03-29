@@ -17,21 +17,17 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Thread } from "@/types/supabase";
 
-// Define thread interface based on our database schema
-interface Thread {
-  id: string;
-  title: string;
-  content: string;
-  created_at: string;
-  community: {
-    id: string;
-    name: string;
-  };
+interface ThreadWithRelations extends Thread {
   author: {
     id: string;
     name: string;
     avatar?: string;
+  };
+  community: {
+    id: string;
+    name: string;
   };
   votes: number;
   commentCount: number;
@@ -43,7 +39,7 @@ const Index = () => {
   const { toast } = useToast();
   const { user, session } = useAuth();
   const [activeTab, setActiveTab] = useState("trending");
-  const [threads, setThreads] = useState<Thread[]>([]);
+  const [threads, setThreads] = useState<ThreadWithRelations[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Redirect to login if not authenticated
@@ -60,7 +56,7 @@ const Index = () => {
     const fetchThreads = async () => {
       setIsLoading(true);
       try {
-        // Get threads
+        // Get threads - using untyped query
         const { data: threadsData, error: threadsError } = await supabase
           .from('threads')
           .select(`
@@ -87,11 +83,13 @@ const Index = () => {
         // Process the threads to match our frontend structure
         const processedThreads = await Promise.all(
           threadsData.map(async (thread) => {
+            const threadData = thread as Thread;
+            
             // Get author info from profiles
             const { data: authorData, error: authorError } = await supabase
               .from('profiles')
               .select('id, username, avatar_url')
-              .eq('id', thread.user_id)
+              .eq('id', threadData.user_id)
               .single();
             
             if (authorError) {
@@ -102,50 +100,50 @@ const Index = () => {
             const { data: communityData, error: communityError } = await supabase
               .from('communities')
               .select('id, name')
-              .eq('id', thread.community_id)
+              .eq('id', threadData.community_id)
               .single();
             
             if (communityError) {
               console.error('Error fetching community data:', communityError);
             }
             
-            // Get upvotes count
+            // Get upvotes count using untyped query
             const { count: upvotes, error: upvotesError } = await supabase
               .from('votes')
               .select('id', { count: 'exact' })
-              .eq('thread_id', thread.id)
+              .eq('thread_id', threadData.id)
               .eq('vote_type', 'up');
               
             if (upvotesError) {
               console.error('Error counting upvotes:', upvotesError);
             }
             
-            // Get downvotes count
+            // Get downvotes count using untyped query
             const { count: downvotes, error: downvotesError } = await supabase
               .from('votes')
               .select('id', { count: 'exact' })
-              .eq('thread_id', thread.id)
+              .eq('thread_id', threadData.id)
               .eq('vote_type', 'down');
             
             if (downvotesError) {
               console.error('Error counting downvotes:', downvotesError);
             }
             
-            // Get comment count
+            // Get comment count using untyped query
             const { count: commentCount, error: commentCountError } = await supabase
               .from('comments')
               .select('id', { count: 'exact' })
-              .eq('thread_id', thread.id);
+              .eq('thread_id', threadData.id);
             
             if (commentCountError) {
               console.error('Error counting comments:', commentCountError);
             }
             
-            // Get tags
+            // Get tags using untyped query
             const { data: tagsData, error: tagsError } = await supabase
               .from('thread_tags')
               .select('tags:tag_id(name)')
-              .eq('thread_id', thread.id);
+              .eq('thread_id', threadData.id);
             
             if (tagsError) {
               console.error('Error fetching tags:', tagsError);
@@ -156,10 +154,7 @@ const Index = () => {
               : [];
               
             return {
-              id: thread.id,
-              title: thread.title,
-              content: thread.content,
-              created_at: thread.created_at,
+              ...threadData,
               community: {
                 id: communityData?.id || '',
                 name: communityData?.name || 'Unknown'
@@ -171,7 +166,7 @@ const Index = () => {
               },
               votes: (upvotes || 0) - (downvotes || 0),
               commentCount: commentCount || 0,
-              tags
+              tags: tags as string[]
             };
           })
         );
