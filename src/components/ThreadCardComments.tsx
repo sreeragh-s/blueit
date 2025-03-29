@@ -11,6 +11,13 @@ interface ThreadCardCommentsProps {
   commentCount: number;
 }
 
+// Define a type for the profile data structure
+interface ProfileData {
+  id?: string;
+  username?: string;
+  avatar_url?: string;
+}
+
 const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps) => {
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
@@ -57,14 +64,14 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
           
           // Make sure we have a valid profiles object from the join
           // The key is to use the correct path when accessing the joined profiles data
-          const authorProfile = comment.profiles || {};
+          const authorProfile = comment.profiles as ProfileData || {};
           
           return {
             id: comment.id,
             content: comment.content,
             author: {
-              name: authorProfile.username || 'Anonymous',
-              avatar: authorProfile.avatar_url
+              name: authorProfile?.username || 'Anonymous',
+              avatar: authorProfile?.avatar_url
             },
             votes: ((upvotes || 0) - (downvotes || 0)),
             createdAt: new Date(comment.created_at).toLocaleDateString('en-US', {
