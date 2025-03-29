@@ -32,6 +32,7 @@ const Navbar = () => {
   const { user, profile, signOut } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   useEffect(() => {
     const checkIfMobile = () => {
@@ -62,15 +63,17 @@ const Navbar = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         {isMobile && (
-          <Sheet>
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden mr-2">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[240px] sm:w-[300px] pr-0">
-              <Sidebar className="px-0 pb-0 border-0" />
+            <SheetContent side="left" className="p-0 w-[80vw] max-w-[300px]">
+              <div className="h-full py-4 overflow-auto">
+                <Sidebar className="border-0" />
+              </div>
             </SheetContent>
           </Sheet>
         )}

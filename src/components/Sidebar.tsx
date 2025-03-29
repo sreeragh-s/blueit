@@ -106,91 +106,87 @@ const Sidebar = ({ className }: SidebarProps) => {
       setLoading(false);
     }
   };
-  
-  // If mobile, don't render the sidebar
-  if (isMobile) return null;
-  
-  return (
-    <div className={cn("w-[260px] shrink-0 border-r bg-background h-screen", className)}>
-      <div className="flex flex-col h-full overflow-hidden">
-        <div className="px-4 py-2">
-          <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">
-            Discover
+
+  // Content that will be shared between mobile and desktop sidebar
+  const sidebarContent = (
+    <>
+      <div className="px-4 py-2">
+        <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">
+          Discover
+        </h2>
+        <div className="space-y-1">
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to="/">
+              <Home className="mr-2 h-4 w-4" />
+              Home
+            </Link>
+          </Button>
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to="/explore">
+              <Compass className="mr-2 h-4 w-4" />
+              Explore
+            </Link>
+          </Button>
+          {user && (
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/saved">
+                <Bookmark className="mr-2 h-4 w-4" />
+                Saved
+              </Link>
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      <div className="px-4 py-2 flex-1 overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between">
+          <h2 className="px-2 text-lg font-semibold tracking-tight">
+            My Communities
           </h2>
-          <div className="space-y-1">
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link to="/">
-                <Home className="mr-2 h-4 w-4" />
-                Home
-              </Link>
+          {user ? (
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-8 w-8 p-0"
+              onClick={() => setIsCreateCommunityOpen(true)}
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span className="sr-only">Create community</span>
             </Button>
-            <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link to="/explore">
-                <Compass className="mr-2 h-4 w-4" />
-                Explore
-              </Link>
-            </Button>
-            {user && (
-              <Button variant="ghost" className="w-full justify-start" asChild>
-                <Link to="/saved">
-                  <Bookmark className="mr-2 h-4 w-4" />
-                  Saved
-                </Link>
-              </Button>
-            )}
-          </div>
+          ) : null}
         </div>
         
-        <div className="px-4 py-2 flex-1 overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between">
-            <h2 className="px-2 text-lg font-semibold tracking-tight">
-              My Communities
-            </h2>
-            {user ? (
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                className="h-8 w-8 p-0"
-                onClick={() => setIsCreateCommunityOpen(true)}
-              >
-                <PlusCircle className="h-4 w-4" />
-                <span className="sr-only">Create community</span>
-              </Button>
-            ) : null}
+        <ScrollArea className="flex-1">
+          <div className="space-y-1 p-2">
+            {loading ? (
+              <div className="text-sm text-muted-foreground px-2 py-1.5">Loading communities...</div>
+            ) : communities.length > 0 ? (
+              communities.map((community) => (
+                <Button
+                  key={community.id}
+                  variant="ghost"
+                  className="w-full justify-start font-normal"
+                  asChild
+                >
+                  <Link to={`/community/${community.id}`}>
+                    <div className={`${community.color} rounded-md h-4 w-4 mr-2 flex items-center justify-center text-white`}>
+                      {community.icon}
+                    </div>
+                    {community.name}
+                  </Link>
+                </Button>
+              ))
+            ) : user ? (
+              <div className="text-sm text-muted-foreground px-2 py-1.5">
+                You haven't joined any communities yet.
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground px-2 py-1.5">
+                Sign in to join communities.
+              </div>
+            )}
           </div>
-          
-          <ScrollArea className="flex-1">
-            <div className="space-y-1 p-2">
-              {loading ? (
-                <div className="text-sm text-muted-foreground px-2 py-1.5">Loading communities...</div>
-              ) : communities.length > 0 ? (
-                communities.map((community) => (
-                  <Button
-                    key={community.id}
-                    variant="ghost"
-                    className="w-full justify-start font-normal"
-                    asChild
-                  >
-                    <Link to={`/community/${community.id}`}>
-                      <div className={`${community.color} rounded-md h-4 w-4 mr-2 flex items-center justify-center text-white`}>
-                        {community.icon}
-                      </div>
-                      {community.name}
-                    </Link>
-                  </Button>
-                ))
-              ) : user ? (
-                <div className="text-sm text-muted-foreground px-2 py-1.5">
-                  You haven't joined any communities yet.
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground px-2 py-1.5">
-                  Sign in to join communities.
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </div>
+        </ScrollArea>
       </div>
 
       {/* Create Community Dialog */}
@@ -199,6 +195,24 @@ const Sidebar = ({ className }: SidebarProps) => {
         onOpenChange={setIsCreateCommunityOpen} 
         onCommunityCreated={fetchUserCommunities}
       />
+    </>
+  );
+  
+  // If mobile, render within Sheet
+  if (isMobile) {
+    return (
+      <div className={cn("w-full h-full flex flex-col", className)}>
+        {sidebarContent}
+      </div>
+    );
+  }
+  
+  // Desktop sidebar
+  return (
+    <div className={cn("w-[260px] shrink-0 border-r bg-background h-screen", className)}>
+      <div className="flex flex-col h-full overflow-hidden">
+        {sidebarContent}
+      </div>
     </div>
   );
 };
