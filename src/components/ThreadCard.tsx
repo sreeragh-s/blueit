@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, Bookmark } from "lucide-react";
 import { ThreadCardProps } from "@/types/supabase";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface Props {
   thread: ThreadCardProps;
@@ -15,26 +18,197 @@ interface Props {
 }
 
 const ThreadCard = ({ thread, compact = false }: Props) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [votes, setVotes] = useState(thread.votes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const handleVote = (type: 'up' | 'down') => {
-    if (userVote === type) {
-      // Undo vote
-      setVotes(type === 'up' ? votes - 1 : votes + 1);
-      setUserVote(null);
-    } else {
-      // Change vote
-      if (userVote === 'up' && type === 'down') {
-        setVotes(votes - 2);
-      } else if (userVote === 'down' && type === 'up') {
-        setVotes(votes + 2);
-      } else {
-        setVotes(type === 'up' ? votes + 1 : votes - 1);
-      }
-      setUserVote(type);
+  // Check if the user has voted on or saved this thread
+  useEffect(() => {
+    if (user) {
+      checkUserVote();
+      checkIfSaved();
     }
+  }, [user]);
+
+  const checkUserVote = async () => {
+    if (!user) return;
+    
+    try {
+      const { data } = await supabase
+        .from('votes')
+        .select('vote_type')
+        .eq('user_id', user.id)
+        .eq('thread_id', thread.id)
+        .single();
+      
+      if (data) {
+        setUserVote(data.vote_type as 'up' | 'down');
+      }
+    } catch (error) {
+      // If error, vote doesn't exist
+    }
+  };
+
+  const checkIfSaved = async () => {
+    if (!user) return;
+    
+    try {
+      const { data } = await supabase
+        .from('bookmarks')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('thread_id', thread.id)
+        .single();
+      
+      setSaved(!!data);
+    } catch (error) {
+      // If error, bookmark doesn't exist
+    }
+  };
+
+  const handleVote = async (type: 'up' | 'down') => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "You need to sign in to vote.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // Check if user has already voted
+      const { data: existingVoteData } = await supabase
+        .from('votes')
+        .select('*')
+        .eq('thread_id', thread.id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+        
+      if (existingVoteData) {
+        if (existingVoteData.vote_type === type) {
+          // Remove vote if clicking same button again
+          await supabase
+            .from('votes')
+            .delete()
+            .eq('id', existingVoteData.id);
+          
+          setVotes(type === 'up' ? votes - 1 : votes + 1);
+          setUserVote(null);
+          
+          toast({
+            title: "Vote removed",
+            description: "Your vote has been removed",
+          });
+        } else {
+          // Update vote if changing vote type
+          await supabase
+            .from('votes')
+            .update({ vote_type: type })
+            .eq('id', existingVoteData.id);
+          
+          setVotes(type === 'up' ? votes + 2 : votes - 2);
+          setUserVote(type);
+          
+          toast({
+            title: "Vote updated",
+            description: `You ${type}voted this thread`,
+          });
+        }
+      } else {
+        // Create new vote
+        await supabase
+          .from('votes')
+          .insert({
+            thread_id: thread.id,
+            user_id: user.id,
+            vote_type: type
+          });
+        
+        setVotes(type === 'up' ? votes + 1 : votes - 1);
+        setUserVote(type);
+        
+        toast({
+          title: "Vote registered",
+          description: `You ${type}voted this thread`,
+        });
+      }
+    } catch (error) {
+      console.error('Error voting on thread:', error);
+      toast({
+        title: "Error",
+        description: "Failed to register your vote. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleToggleSave = async () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "You need to sign in to save threads.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      if (saved) {
+        // Remove bookmark
+        const { data: bookmarkData } = await supabase
+          .from('bookmarks')
+          .select('id')
+          .eq('thread_id', thread.id)
+          .eq('user_id', user.id)
+          .single();
+          
+        if (bookmarkData) {
+          await supabase
+            .from('bookmarks')
+            .delete()
+            .eq('id', bookmarkData.id);
+        }
+        
+        setSaved(false);
+        toast({
+          title: "Thread unsaved",
+          description: "Thread removed from your saved items",
+        });
+      } else {
+        // Add bookmark
+        await supabase
+          .from('bookmarks')
+          .insert({
+            thread_id: thread.id,
+            user_id: user.id
+          });
+        
+        setSaved(true);
+        toast({
+          title: "Thread saved",
+          description: "Thread added to your saved items",
+        });
+      }
+    } catch (error) {
+      console.error('Error saving/unsaving thread:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update saved status. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/thread/${thread.id}`;
+    navigator.clipboard.writeText(url);
+    toast({
+      title: "Link copied",
+      description: "Thread link copied to clipboard",
+    });
   };
 
   return (
@@ -111,14 +285,19 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
         </Button>
         
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8"
+            onClick={handleShare}
+          >
             <Share2 size={16} />
           </Button>
           <Button 
             variant="ghost" 
             size="icon" 
             className={cn("h-8 w-8", saved ? "text-primary" : "")}
-            onClick={() => setSaved(!saved)}
+            onClick={handleToggleSave}
           >
             <Bookmark size={16} />
           </Button>

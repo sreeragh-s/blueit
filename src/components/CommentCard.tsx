@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ThumbsUp, ThumbsDown, Reply, MoreVertical, Flag } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +17,7 @@ import {
 
 interface CommentProps {
   comment: {
-    id: number;
+    id: string;
     content: string;
     author: {
       name: string;
@@ -23,39 +26,200 @@ interface CommentProps {
     votes: number;
     createdAt: string;
     replies?: CommentProps["comment"][];
+    parent_id?: string | null;
+    user_id?: string;
   };
   level?: number;
 }
 
 const CommentCard = ({ comment, level = 0 }: CommentProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [votes, setVotes] = useState(comment.votes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyContent, setReplyContent] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleVote = (type: 'up' | 'down') => {
-    if (userVote === type) {
-      // Undo vote
-      setVotes(type === 'up' ? votes - 1 : votes + 1);
-      setUserVote(null);
-    } else {
-      // Change vote
-      if (userVote === 'up' && type === 'down') {
-        setVotes(votes - 2);
-      } else if (userVote === 'down' && type === 'up') {
-        setVotes(votes + 2);
-      } else {
-        setVotes(type === 'up' ? votes + 1 : votes - 1);
+  // Check if user has voted on this comment
+  useState(() => {
+    const checkUserVote = async () => {
+      if (!user) return;
+      
+      try {
+        const { data } = await supabase
+          .from('votes')
+          .select('vote_type')
+          .eq('user_id', user.id)
+          .eq('comment_id', comment.id)
+          .single();
+        
+        if (data) {
+          setUserVote(data.vote_type as 'up' | 'down');
+        }
+      } catch (error) {
+        // If error, vote doesn't exist
       }
-      setUserVote(type);
+    };
+    
+    checkUserVote();
+  });
+  
+  const handleVote = async (type: 'up' | 'down') => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "You need to sign in to vote on comments.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // Check if user has already voted
+      const { data: existingVoteData } = await supabase
+        .from('votes')
+        .select('*')
+        .eq('comment_id', comment.id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+        
+      if (existingVoteData) {
+        if (existingVoteData.vote_type === type) {
+          // Remove vote if clicking the same button again
+          await supabase
+            .from('votes')
+            .delete()
+            .eq('id', existingVoteData.id);
+          
+          // Update UI
+          setVotes(type === 'up' ? votes - 1 : votes + 1);
+          setUserVote(null);
+          
+          toast({
+            title: "Vote removed",
+            description: "Your vote has been removed",
+          });
+        } else {
+          // Update vote if changing vote type
+          await supabase
+            .from('votes')
+            .update({ vote_type: type })
+            .eq('id', existingVoteData.id);
+          
+          // Update UI
+          setVotes(type === 'up' ? votes + 2 : votes - 2);
+          setUserVote(type);
+          
+          toast({
+            title: "Vote updated",
+            description: `You ${type}voted this comment`,
+          });
+        }
+      } else {
+        // Create new vote
+        await supabase
+          .from('votes')
+          .insert({
+            comment_id: comment.id,
+            user_id: user.id,
+            vote_type: type
+          });
+        
+        // Update UI
+        setVotes(type === 'up' ? votes + 1 : votes - 1);
+        setUserVote(type);
+        
+        toast({
+          title: "Vote registered",
+          description: `You ${type}voted this comment`,
+        });
+      }
+    } catch (error) {
+      console.error('Error voting on comment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to register your vote. Please try again.",
+        variant: "destructive"
+      });
     }
   };
   
-  const handleSubmitReply = () => {
-    if (replyContent.trim()) {
-      console.log("Reply submitted:", replyContent);
+  const handleSubmitReply = async () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "You need to sign in to reply to comments.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!replyContent.trim()) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Get thread_id from parent comment by looking at the URL
+      const threadId = window.location.pathname.split('/').pop();
+      
+      const { data: newReply, error } = await supabase
+        .from('comments')
+        .insert({
+          content: replyContent,
+          thread_id: threadId,
+          user_id: user.id,
+          parent_id: comment.id
+        })
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id,
+          profiles:user_id(id, username, avatar_url)
+        `)
+        .single();
+      
+      if (error) throw error;
+      
+      // Format the reply to match our comment interface
+      const formattedReply = {
+        id: newReply.id,
+        content: newReply.content,
+        author: {
+          name: user.user_metadata.username || 'Anonymous',
+          avatar: user.user_metadata.avatar_url
+        },
+        votes: 0,
+        createdAt: "Just now",
+        parent_id: comment.id,
+        replies: []
+      };
+      
+      // Add the reply to the UI
+      if (!comment.replies) {
+        comment.replies = [formattedReply];
+      } else {
+        comment.replies = [formattedReply, ...comment.replies];
+      }
+      
+      // Reset form
       setReplyContent("");
       setShowReplyForm(false);
+      
+      toast({
+        title: "Reply posted",
+        description: "Your reply has been posted successfully.",
+      });
+    } catch (error) {
+      console.error('Error adding reply:', error);
+      toast({
+        title: "Error",
+        description: "Failed to post your reply. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -63,7 +227,7 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
   const maxLevel = 5;
   
   return (
-    <div className={cn("comment-card", level > 0 && "ml-6 mt-3")}>
+    <div className={cn("comment-card bg-card border rounded-lg p-4", level > 0 && "ml-6 mt-3")}>
       <div className="flex items-start gap-3">
         <Avatar className="h-8 w-8">
           <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
@@ -149,9 +313,9 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
                 <Button 
                   size="sm" 
                   onClick={handleSubmitReply}
-                  disabled={!replyContent.trim()}
+                  disabled={!replyContent.trim() || isSubmitting || !user}
                 >
-                  Reply
+                  {isSubmitting ? 'Posting...' : 'Reply'}
                 </Button>
               </div>
             </div>

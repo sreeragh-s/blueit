@@ -203,13 +203,27 @@ const ThreadDetail = () => {
               hour: '2-digit',
               minute: '2-digit'
             }),
-            // Placeholder for replies, to be implemented later
+            parent_id: typedComment.parent_id,
+            user_id: typedComment.user_id,
             replies: []
           };
         })
       );
       
-      setComments(processedComments);
+      // Organize comments with replies nested
+      const topLevelComments = processedComments.filter(comment => !comment.parent_id);
+      const replyComments = processedComments.filter(comment => comment.parent_id);
+      
+      // Add replies to their parent comments
+      replyComments.forEach(reply => {
+        const parent = processedComments.find(comment => comment.id === reply.parent_id);
+        if (parent) {
+          if (!parent.replies) parent.replies = [];
+          parent.replies.push(reply);
+        }
+      });
+      
+      setComments(topLevelComments);
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
