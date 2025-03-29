@@ -110,8 +110,8 @@ const Sidebar = ({ className }: SidebarProps) => {
   if (isMobile) return null;
   
   return (
-    <div className={cn("pb-12 w-[260px] shrink-0 border-r bg-background", className)}>
-      <div className="space-y-4 py-4">
+    <div className={cn("w-[260px] shrink-0 border-r bg-background flex flex-col h-full", className)}>
+      <div className="flex flex-col flex-1 overflow-hidden">
         <div className="px-4 py-2">
           <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">
             Discover
@@ -132,7 +132,7 @@ const Sidebar = ({ className }: SidebarProps) => {
           </div>
         </div>
         
-        <div className="px-4 py-2">
+        <div className="px-4 py-2 flex-1 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between">
             <h2 className="px-2 text-lg font-semibold tracking-tight">
               My Communities
@@ -150,7 +150,7 @@ const Sidebar = ({ className }: SidebarProps) => {
             ) : null}
           </div>
           
-          <ScrollArea className="h-[300px]">
+          <ScrollArea className="flex-1">
             <div className="space-y-1 p-2">
               {loading ? (
                 <div className="text-sm text-muted-foreground px-2 py-1.5">Loading communities...</div>

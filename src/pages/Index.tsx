@@ -47,13 +47,13 @@ const Index = () => {
   }
   
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
-      <div className="container flex">
-        <Sidebar />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar className="h-[calc(100vh-4rem)]" />
         
-        <main className="flex-1 p-4 lg:p-6">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold">Home Feed</h1>
             <Button asChild>
