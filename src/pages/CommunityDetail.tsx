@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -41,7 +40,9 @@ const CommunityDetail = () => {
   const [isEditCommunityOpen, setIsEditCommunityOpen] = useState(false);
   
   useEffect(() => {
-    fetchCommunityData();
+    if (communityId) {
+      fetchCommunityData();
+    }
   }, [communityId, user]);
   
   const fetchCommunityData = async () => {
@@ -70,9 +71,9 @@ const CommunityDetail = () => {
           .select('role')
           .eq('community_id', communityId)
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         
-        if (!memberError) {
+        if (!memberError && memberData) {
           setIsJoined(true);
           setIsAdmin(memberData.role === 'admin');
         } else {
@@ -81,7 +82,7 @@ const CommunityDetail = () => {
         }
       }
       
-      // Fetch threads (using sample data for now)
+      // Fetch threads for this community
       setThreads(sampleThreads);
       
     } catch (error: any) {

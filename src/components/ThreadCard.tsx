@@ -6,29 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThumbsUp, ThumbsDown, MessageSquare, Share2, Bookmark } from "lucide-react";
+import { ThreadCardProps } from "@/types/supabase";
+import { cn } from "@/lib/utils";
 
-interface ThreadCardProps {
-  thread: {
-    id: number;
-    title: string;
-    content: string;
-    author: {
-      name: string;
-      avatar?: string;
-    };
-    community: {
-      name: string;
-      id: number;
-    };
-    votes: number;
-    commentCount: number;
-    tags?: string[];
-    createdAt: string;
-  };
+interface Props {
+  thread: ThreadCardProps;
   compact?: boolean;
 }
 
-const ThreadCard = ({ thread, compact = false }: ThreadCardProps) => {
+const ThreadCard = ({ thread, compact = false }: Props) => {
   const [votes, setVotes] = useState(thread.votes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [saved, setSaved] = useState(false);
@@ -142,5 +128,4 @@ const ThreadCard = ({ thread, compact = false }: ThreadCardProps) => {
   );
 };
 
-import { cn } from "@/lib/utils";
 export default ThreadCard;

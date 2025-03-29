@@ -18,28 +18,94 @@ import {
   Camera
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CreateCommunityDialog from "./CreateCommunityDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface SidebarProps {
   className?: string;
 }
 
-// Sample community data
-const communities = [
-  { id: 1, name: "Technology", icon: <Laptop size={18} />, color: "bg-blue-500" },
-  { id: 2, name: "Photography", icon: <Camera size={18} />, color: "bg-pink-500" },
-  { id: 3, name: "Music", icon: <Music size={18} />, color: "bg-purple-500" },
-  { id: 4, name: "Gaming", icon: <Gamepad2 size={18} />, color: "bg-green-500" },
-  { id: 5, name: "Books", icon: <BookOpen size={18} />, color: "bg-yellow-500" },
-  { id: 6, name: "Sports", icon: <Heart size={18} />, color: "bg-red-500" },
-  { id: 7, name: "Science", icon: <Star size={18} />, color: "bg-indigo-500" },
+interface Community {
+  id: string;
+  name: string;
+  icon: JSX.Element;
+  color: string;
+}
+
+const defaultCommunityIcons = [
+  { icon: <Laptop size={18} />, color: "bg-blue-500" },
+  { icon: <Camera size={18} />, color: "bg-pink-500" },
+  { icon: <Music size={18} />, color: "bg-purple-500" },
+  { icon: <Gamepad2 size={18} />, color: "bg-green-500" },
+  { icon: <BookOpen size={18} />, color: "bg-yellow-500" },
+  { icon: <Heart size={18} />, color: "bg-red-500" },
+  { icon: <Star size={18} />, color: "bg-indigo-500" },
 ];
 
 const Sidebar = ({ className }: SidebarProps) => {
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [isCreateCommunityOpen, setIsCreateCommunityOpen] = useState(false);
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  useEffect(() => {
+    if (user) {
+      fetchUserCommunities();
+    }
+  }, [user]);
+  
+  const fetchUserCommunities = async () => {
+    try {
+      setLoading(true);
+      
+      // Get communities the user is a member of
+      const { data: memberships, error: membershipError } = await supabase
+        .from('community_members')
+        .select('community_id')
+        .eq('user_id', user?.id);
+      
+      if (membershipError) throw membershipError;
+      
+      if (memberships && memberships.length > 0) {
+        // Get community details for each membership
+        const communityIds = memberships.map(m => m.community_id);
+        
+        const { data: communityData, error: communityError } = await supabase
+          .from('communities')
+          .select('id, name')
+          .in('id', communityIds);
+        
+        if (communityError) throw communityError;
+        
+        if (communityData) {
+          // Assign a random icon and color to each community
+          const communitiesWithIcons = communityData.map((community, index) => {
+            const iconIndex = index % defaultCommunityIcons.length;
+            return {
+              ...community,
+              icon: defaultCommunityIcons[iconIndex].icon,
+              color: defaultCommunityIcons[iconIndex].color
+            };
+          });
+          
+          setCommunities(communitiesWithIcons);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching communities:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch communities. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // If mobile, don't render the sidebar
   if (isMobile) return null;
@@ -93,19 +159,33 @@ const Sidebar = ({ className }: SidebarProps) => {
           
           <ScrollArea className="h-[300px]">
             <div className="space-y-1 p-2">
-              {communities.map((community) => (
-                <Button
-                  key={community.id}
-                  variant="ghost"
-                  className="w-full justify-start font-normal"
-                  asChild
-                >
-                  <Link to={`/community/${community.id}`}>
-                    <div className={`${community.color} rounded-md h-4 w-4 mr-2 flex items-center justify-center text-white`}></div>
-                    {community.name}
-                  </Link>
-                </Button>
-              ))}
+              {loading ? (
+                <div className="text-sm text-muted-foreground px-2 py-1.5">Loading communities...</div>
+              ) : communities.length > 0 ? (
+                communities.map((community) => (
+                  <Button
+                    key={community.id}
+                    variant="ghost"
+                    className="w-full justify-start font-normal"
+                    asChild
+                  >
+                    <Link to={`/community/${community.id}`}>
+                      <div className={`${community.color} rounded-md h-4 w-4 mr-2 flex items-center justify-center text-white`}>
+                        {community.icon}
+                      </div>
+                      {community.name}
+                    </Link>
+                  </Button>
+                ))
+              ) : user ? (
+                <div className="text-sm text-muted-foreground px-2 py-1.5">
+                  You haven't joined any communities yet.
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground px-2 py-1.5">
+                  Sign in to join communities.
+                </div>
+              )}
             </div>
           </ScrollArea>
         </div>
@@ -115,6 +195,7 @@ const Sidebar = ({ className }: SidebarProps) => {
       <CreateCommunityDialog 
         open={isCreateCommunityOpen} 
         onOpenChange={setIsCreateCommunityOpen} 
+        onCommunityCreated={fetchUserCommunities}
       />
     </div>
   );

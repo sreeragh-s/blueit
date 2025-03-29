@@ -1,6 +1,6 @@
 
 import ThreadCard from "@/components/ThreadCard";
-import { ThreadWithRelations } from "@/types/supabase";
+import { ThreadWithRelations, ThreadCardProps } from "@/types/supabase";
 
 interface ThreadListProps {
   threads: ThreadWithRelations[];
