@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,12 +43,12 @@ const Login = () => {
     }
   }, [user, navigate]);
 
-  // Login form
+  // Login form with default demo credentials
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: "demo@blueit.com",
+      password: "password",
     },
   });
 
