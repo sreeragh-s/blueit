@@ -11,12 +11,12 @@ interface CommentsSectionProps {
 
 const CommentsSection = ({ user, comments, onSubmitComment }: CommentsSectionProps) => {
   return (
-    <div className="mb-6">
+    <div className="w-full mb-6">
       <h2 className="text-lg font-semibold mb-4">Comments ({comments.length})</h2>
       
       <CommentForm user={user} onSubmit={onSubmitComment} />
       
-      <div className="space-y-4">
+      <div className="w-full space-y-4">
         {comments.length > 0 ? (
           comments.map((comment) => (
             <CommentCard key={comment.id} comment={comment} />
