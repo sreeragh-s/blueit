@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,24 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
     }
     
     try {
+      console.log("Voting on comment:", {
+        commentId: comment.id,
+        userId: user.id,
+        voteType: type
+      });
+      
+      // Validate UUID format for comment.id
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(comment.id)) {
+        console.error("Invalid UUID format for comment.id:", comment.id);
+        toast({
+          title: "Error",
+          description: "Invalid comment ID format. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Check if user has already voted
       const { data: existingVoteData } = await supabase
         .from('votes')
@@ -162,6 +181,26 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
       // Get thread_id from parent comment by looking at the URL
       const threadId = window.location.pathname.split('/').pop();
       
+      console.log("Submitting reply:", {
+        threadId,
+        userId: user.id,
+        parentId: comment.id,
+        content: replyContent
+      });
+      
+      // Validate UUID format for comment.id
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(comment.id)) {
+        console.error("Invalid UUID format for comment.id:", comment.id);
+        throw new Error(`Invalid UUID format for comment.id: ${comment.id}`);
+      }
+      
+      // Validate threadId if extracted from URL
+      if (threadId && !uuidRegex.test(threadId)) {
+        console.error("Invalid UUID format for threadId:", threadId);
+        throw new Error(`Invalid UUID format for threadId: ${threadId}`);
+      }
+      
       const { data: newReply, error } = await supabase
         .from('comments')
         .insert({
@@ -180,6 +219,8 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
         .single();
       
       if (error) throw error;
+      
+      console.log("Reply successfully added:", newReply);
       
       // Format the reply to match our comment interface
       const formattedReply = {

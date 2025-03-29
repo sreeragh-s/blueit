@@ -33,8 +33,19 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
     try {
       setIsSubmitting(true);
       
-      // No need for format conversion, just use the thread ID directly
-      // Supabase will handle the error if the ID is invalid
+      // Log inputs for debugging
+      console.log("Comment submission inputs:", {
+        threadId,
+        userId: user.id,
+        commentText
+      });
+      
+      // Validate UUID format for threadId
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(threadId)) {
+        console.error("Invalid UUID format for threadId:", threadId);
+        throw new Error(`Invalid UUID format for threadId: ${threadId}`);
+      }
       
       const { data: newComment, error } = await supabase
         .from('comments')
@@ -46,7 +57,12 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error during comment insertion:", error);
+        throw error;
+      }
+      
+      console.log("Comment successfully added:", newComment);
       
       setCommentText("");
       onCommentAdded();

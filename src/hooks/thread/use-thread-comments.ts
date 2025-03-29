@@ -10,6 +10,16 @@ export const useThreadComments = (threadId: string) => {
   const [comments, setComments] = useState<any[]>([]);
   
   const fetchComments = async () => {
+    // Log for debugging
+    console.log("useThreadComments - Fetching comments for threadId:", threadId);
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(threadId)) {
+      console.error("Invalid UUID format in useThreadComments:", threadId);
+      return;
+    }
+    
     try {
       const { data: commentsData, error: commentsError } = await supabase
         .from('comments')
@@ -26,7 +36,12 @@ export const useThreadComments = (threadId: string) => {
         .eq('thread_id', threadId)
         .order('created_at', { ascending: false });
       
-      if (commentsError) throw commentsError;
+      if (commentsError) {
+        console.error("Error fetching comments in useThreadComments:", commentsError);
+        throw commentsError;
+      }
+      
+      console.log("useThreadComments - Raw comments data:", commentsData);
       
       // Process comments to count votes
       const processedComments = await Promise.all(
@@ -83,9 +98,11 @@ export const useThreadComments = (threadId: string) => {
         }
       });
       
+      console.log("useThreadComments - Processed comments:", topLevelComments);
+      
       setComments(topLevelComments);
     } catch (error) {
-      console.error('Error fetching comments:', error);
+      console.error('Error fetching comments in useThreadComments:', error);
     }
   };
 
@@ -101,6 +118,25 @@ export const useThreadComments = (threadId: string) => {
     
     if (!content.trim()) return;
     
+    // Log for debugging
+    console.log("handleSubmitComment - Inputs:", {
+      threadId,
+      userId: user.id,
+      content
+    });
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(threadId)) {
+      console.error("Invalid UUID format in handleSubmitComment:", threadId);
+      toast({
+        title: "Error",
+        description: "Invalid thread ID format. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       const { data: newComment, error } = await supabase
         .from('comments')
@@ -112,7 +148,12 @@ export const useThreadComments = (threadId: string) => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding comment in useThreadComments:', error);
+        throw error;
+      }
+      
+      console.log("handleSubmitComment - New comment added:", newComment);
       
       // Add the new comment to the UI immediately
       const processedComment = {
@@ -131,7 +172,7 @@ export const useThreadComments = (threadId: string) => {
       
       return processedComment;
     } catch (error) {
-      console.error('Error adding comment:', error);
+      console.error('Error adding comment in useThreadComments:', error);
       toast({
         title: "Error",
         description: "Failed to post your comment. Please try again.",

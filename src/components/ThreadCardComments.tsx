@@ -26,6 +26,16 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
   const fetchComments = async () => {
     if (!threadId) return;
     
+    // Log the threadId for debugging
+    console.log("Fetching comments for threadId:", threadId);
+    
+    // Validate UUID format for threadId
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(threadId)) {
+      console.error("Invalid UUID format for threadId:", threadId);
+      return;
+    }
+    
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -42,7 +52,13 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
         .order('created_at', { ascending: false })
         .limit(5); // Limit to 5 most recent comments
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching comments:", error);
+        throw error;
+      }
+      
+      console.log("Fetched comments:", data);
+      
       if (!data) return;
       
       // Process comments to count votes
@@ -63,7 +79,6 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
             .eq('vote_type', 'down');
           
           // Make sure we have a valid profiles object from the join
-          // The key is to use the correct path when accessing the joined profiles data
           const authorProfile = comment.profiles as ProfileData || {};
           
           return {
@@ -85,6 +100,7 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
         })
       );
       
+      console.log("Processed comments:", processedComments);
       setComments(processedComments);
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -100,6 +116,7 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
   }, [showComments, threadId]);
   
   const handleCommentAdded = () => {
+    console.log("Comment added, refreshing comments");
     fetchComments();
   };
   
