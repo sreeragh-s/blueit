@@ -8,6 +8,9 @@ interface ThreadCardCommentsProps {
   threadId: string;  // This should be a UUID from the database
   commentCount: number;
   onCommentCountChange?: (count: number) => void;
+  showAllComments?: boolean;
+  onViewAllComments?: () => void;
+  commentsToShow?: number;
 }
 
 interface ProfileData {
@@ -19,11 +22,13 @@ interface ProfileData {
 const ThreadCardComments = ({ 
   threadId, 
   commentCount,
-  onCommentCountChange
+  onCommentCountChange,
+  showAllComments = false,
+  onViewAllComments,
+  commentsToShow = 5
 }: ThreadCardCommentsProps) => {
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showAllComments, setShowAllComments] = useState(false);
   const [allComments, setAllComments] = useState<any[]>([]);
   
   console.log("[ThreadCardComments] Received threadId:", {
@@ -61,7 +66,7 @@ const ThreadCardComments = ({
         .eq('thread_id', threadId)
         .is('parent_id', null) // Only get top-level comments
         .order('created_at', { ascending: false })
-        .limit(5); // Limit to 5 most recent comments
+        .limit(commentsToShow); // Limit to specified number of comments
       
       if (commentsError) {
         console.error("[ThreadCardComments] Error fetching comments:", commentsError);
@@ -308,7 +313,7 @@ const ThreadCardComments = ({
   
   useEffect(() => {
     fetchComments();
-  }, [threadId]);
+  }, [threadId, commentsToShow]);
   
   const handleViewAllComments = async () => {
     setShowAllComments(true);
@@ -411,12 +416,24 @@ const ThreadCardComments = ({
         )}
       </div>
       
-      {!showAllComments && commentCount > (comments.length + comments.reduce((total, comment) => total + (comment.replies?.length || 0), 0)) && comments.length > 0 && (
+      {!showAllComments && commentCount > comments.reduce((total, comment) => {
+        // Count this comment
+        let count = 1;
+        // Add all replies recursively
+        const countReplies = (replies) => {
+          if (!replies || !replies.length) return 0;
+          return replies.reduce((sum, reply) => {
+            return sum + 1 + countReplies(reply.replies);
+          }, 0);
+        };
+        count += countReplies(comment.replies);
+        return total + count;
+      }, 0) && (
         <div className="p-3 text-center">
           <Button 
             variant="link"
             size="sm"
-            onClick={handleViewAllComments}
+            onClick={onViewAllComments}
           >
             View all {commentCount} comments
           </Button>

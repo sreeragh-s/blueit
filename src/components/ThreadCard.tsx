@@ -24,7 +24,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [commentCount, setCommentCount] = useState(thread.commentCount);
-  const [showComments, setShowComments] = useState(false);
+  const [showAllComments, setShowAllComments] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isBookmarking, setIsBookmarking] = useState(false);
   
@@ -110,8 +110,8 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
     }
   };
 
-  const handleToggleComments = () => {
-    setShowComments(!showComments);
+  const handleViewAllComments = () => {
+    setShowAllComments(true);
   };
 
   const handleShare = () => {
@@ -145,7 +145,6 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
             variant="ghost" 
             size="sm" 
             className="flex items-center gap-1"
-            onClick={handleToggleComments}
           >
             <MessageSquare size={16} />
             <span>{commentCount} Comments</span>
@@ -159,13 +158,14 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
           />
         </div>
         
-        {showComments && (
-          <ThreadCardComments 
-            threadId={threadId} 
-            commentCount={commentCount} 
-            onCommentCountChange={handleCommentCountChange} 
-          />
-        )}
+        <ThreadCardComments 
+          threadId={threadId} 
+          commentCount={commentCount}
+          onCommentCountChange={handleCommentCountChange}
+          showAllComments={showAllComments}
+          onViewAllComments={handleViewAllComments}
+          commentsToShow={3}
+        />
       </CardFooter>
     </Card>
   );
