@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import ThreadCardComments from "@/components/ThreadCardComments";
 
 interface Props {
   thread: ThreadCardProps;
@@ -22,6 +24,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
   const [votes, setVotes] = useState(thread.votes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [saved, setSaved] = useState(false);
+  const [commentCount, setCommentCount] = useState(thread.commentCount);
   
   const threadId = thread?.id ? String(thread.id) : null;
 
@@ -305,32 +308,36 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
         </div>
       </CardContent>
       
-      <CardFooter className="px-4 py-2 flex justify-between border-t bg-muted/20">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to={`/thread/${threadId}`} className="flex items-center gap-1">
+      <CardFooter className="px-4 py-2 flex flex-col border-t bg-muted/20">
+        <div className="w-full flex justify-between">
+          <Button variant="ghost" size="sm" className="flex items-center gap-1">
             <MessageSquare size={16} />
-            <span>{thread.commentCount} Comments</span>
-          </Link>
-        </Button>
-        
-        <div className="flex gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8"
-            onClick={handleShare}
-          >
-            <Share2 size={16} />
+            <span>{commentCount} Comments</span>
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={cn("h-8 w-8", saved ? "text-primary" : "")}
-            onClick={handleToggleSave}
-          >
-            <Bookmark size={16} />
-          </Button>
+          
+          <div className="flex gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={handleShare}
+            >
+              <Share2 size={16} />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={cn("h-8 w-8", saved ? "text-primary" : "")}
+              onClick={handleToggleSave}
+            >
+              <Bookmark size={16} />
+            </Button>
+          </div>
         </div>
+        
+        {!compact && (
+          <ThreadCardComments threadId={threadId} commentCount={commentCount} />
+        )}
       </CardFooter>
     </Card>
   );
