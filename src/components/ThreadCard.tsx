@@ -28,7 +28,22 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [saved, setSaved] = useState(false);
   
+  // Convert thread.id to string and ensure it's in UUID format
+  // Log the original thread ID for debugging
+  console.log("[ThreadCard] Original thread.id:", {
+    id: thread?.id,
+    type: typeof thread?.id
+  });
+  
+  // Extract the raw UUID from thread.id if it exists, otherwise null
   const threadId = thread?.id ? String(thread.id) : null;
+  
+  // Log the processed threadId
+  console.log("[ThreadCard] Processed threadId:", {
+    value: threadId,
+    type: typeof threadId,
+    isUuid: threadId?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) !== null
+  });
   
   const { 
     voteThread, 

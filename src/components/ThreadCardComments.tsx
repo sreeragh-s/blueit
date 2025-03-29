@@ -23,16 +23,24 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
+  // Add debug information about the incoming threadId
+  console.log("[ThreadCardComments] Received threadId:", {
+    value: threadId,
+    type: typeof threadId,
+    length: threadId?.length,
+    isUuid: threadId?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) !== null
+  });
+  
   const fetchComments = async () => {
     if (!threadId) return;
     
     // Log the threadId for debugging
-    console.log("Fetching comments for threadId:", threadId);
+    console.log("[ThreadCardComments] Fetching comments for threadId:", threadId);
     
     // Validate UUID format for threadId
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(threadId)) {
-      console.error("Invalid UUID format for threadId:", threadId);
+      console.error("[ThreadCardComments] Invalid UUID format for threadId:", threadId);
       return;
     }
     
@@ -53,11 +61,11 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
         .limit(5); // Limit to 5 most recent comments
       
       if (error) {
-        console.error("Error fetching comments:", error);
+        console.error("[ThreadCardComments] Error fetching comments:", error);
         throw error;
       }
       
-      console.log("Fetched comments:", data);
+      console.log("[ThreadCardComments] Fetched comments:", data);
       
       if (!data) return;
       
@@ -100,10 +108,10 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
         })
       );
       
-      console.log("Processed comments:", processedComments);
+      console.log("[ThreadCardComments] Processed comments:", processedComments);
       setComments(processedComments);
     } catch (error) {
-      console.error('Error fetching comments:', error);
+      console.error('[ThreadCardComments] Error fetching comments:', error);
     } finally {
       setLoading(false);
     }
@@ -116,7 +124,7 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
   }, [showComments, threadId]);
   
   const handleCommentAdded = () => {
-    console.log("Comment added, refreshing comments");
+    console.log("[ThreadCardComments] Comment added, refreshing comments");
     fetchComments();
   };
   

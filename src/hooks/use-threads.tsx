@@ -35,6 +35,14 @@ export const useThreads = (userId?: string) => {
           return;
         }
         
+        // Log thread IDs from database for debugging
+        console.log("[useThreads] Raw thread IDs from DB:", 
+          threadsData.map(thread => ({ 
+            id: thread.id, 
+            type: typeof thread.id 
+          }))
+        );
+        
         // Process threads with proper async handling
         const processedThreads = await Promise.all(
           threadsData.map(async (thread) => {
@@ -99,9 +107,16 @@ export const useThreads = (userId?: string) => {
           })
         );
         
+        console.log("[useThreads] Processed thread IDs:", 
+          processedThreads.map(thread => ({ 
+            id: thread.id, 
+            type: typeof thread.id 
+          }))
+        );
+        
         setThreads(processedThreads);
       } catch (error) {
-        console.error('Error fetching threads:', error);
+        console.error('[useThreads] Error fetching threads:', error);
         toast({
           title: 'Error',
           description: 'Failed to load threads. Please try again.',

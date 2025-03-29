@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
 interface ThreadCardCommentFormProps {
-  threadId: string;  // Assuming this is now a proper UUID from the database
+  threadId: string;  // This should be a UUID from the database
   onCommentAdded: () => void;
 }
 
@@ -17,6 +17,14 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
   const { toast } = useToast();
   const [commentText, setCommentText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Add extensive debug logging on component render
+  console.log("[ThreadCardCommentForm] Received threadId:", {
+    value: threadId,
+    type: typeof threadId,
+    length: threadId?.length,
+    isUuid: threadId?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) !== null
+  });
   
   const handleSubmitComment = async () => {
     if (!user) {
@@ -34,21 +42,22 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
       setIsSubmitting(true);
       
       // Extensive logging for debugging
-      console.log("Comment submission inputs:", {
-        threadId,  // Log the threadId directly
+      console.log("[ThreadCardCommentForm] Comment submission inputs:", {
+        threadId,
         threadIdType: typeof threadId,
-        threadIdLength: threadId.length,
+        threadIdLength: threadId?.length,
         userId: user.id,
-        commentText
+        commentText,
+        isUuid: threadId?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) !== null
       });
       
       // Validate UUID format for threadId
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(threadId)) {
-        console.error("Invalid UUID format for threadId:", threadId);
+      if (!threadId || !uuidRegex.test(threadId)) {
+        console.error("[ThreadCardCommentForm] Invalid UUID format for threadId:", threadId);
         toast({
           title: "Error",
-          description: "Invalid thread ID. Please try again.",
+          description: "Invalid thread ID format. This might be due to numeric IDs being used instead of UUIDs.",
           variant: "destructive"
         });
         return;
@@ -65,11 +74,11 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
         .single();
       
       if (error) {
-        console.error("Supabase error during comment insertion:", error);
+        console.error("[ThreadCardCommentForm] Supabase error during comment insertion:", error);
         throw error;
       }
       
-      console.log("Comment successfully added:", newComment);
+      console.log("[ThreadCardCommentForm] Comment successfully added:", newComment);
       
       setCommentText("");
       onCommentAdded();
@@ -79,7 +88,7 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
         description: "Your comment has been posted successfully.",
       });
     } catch (error) {
-      console.error("Failed to submit comment:", error);
+      console.error("[ThreadCardCommentForm] Failed to submit comment:", error);
       toast({
         title: "Error",
         description: "Failed to post your comment. Please try again.",
