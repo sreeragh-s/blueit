@@ -42,7 +42,7 @@ export function useCommunities() {
       const enhancedCommunities = communitiesData.map(community => ({
         ...community,
         memberCount: 0, // Set default count
-        tags: ["Community"] // Default tag
+        tags: community.name ? [community.name.split(' ')[0]] : ["Community"] // Simple tag extraction
       }));
       
       setCommunities(enhancedCommunities);
@@ -50,7 +50,7 @@ export function useCommunities() {
       // Now fetch member counts separately for each community
       for (const community of enhancedCommunities) {
         try {
-          // Fetch raw members and count them in JavaScript
+          // Use a direct count approach rather than a potentially problematic aggregate
           const { data, error } = await supabase
             .from('community_members')
             .select('id')
