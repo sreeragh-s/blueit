@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -223,7 +224,6 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
             isBookmarking={isBookmarking} 
             onToggleSave={handleToggleSave}
             onShare={handleShare}
-            commentCount={commentCount} 
           />
         </div>
         

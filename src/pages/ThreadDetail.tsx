@@ -103,7 +103,6 @@ const ThreadDetail = () => {
             </div>
             
             <ThreadActions 
-              commentCount={comments.length} 
               saved={saved} 
               isBookmarking={isBookmarking} 
               onShare={handleShare} 

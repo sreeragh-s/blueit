@@ -10,10 +10,9 @@ interface ThreadCardCommentsProps {
   commentCount: number;
 }
 
-// Define a type for the profile data structure
 interface ProfileData {
-  id?: string;
-  username?: string;
+  id: string;
+  username: string;
   avatar_url?: string;
 }
 
@@ -42,33 +41,42 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
     
     try {
       setLoading(true);
-      // Fixed query to use proper join syntax for profiles
-      const { data, error } = await supabase
+      
+      // First, get comments
+      const { data: commentsData, error: commentsError } = await supabase
         .from('comments')
         .select(`
           id,
           content,
           created_at,
-          user_id,
-          profiles(id, username, avatar_url)
+          user_id
         `)
         .eq('thread_id', threadId)
         .is('parent_id', null) // Only get top-level comments
         .order('created_at', { ascending: false })
         .limit(5); // Limit to 5 most recent comments
       
-      if (error) {
-        console.error("[ThreadCardComments] Error fetching comments:", error);
-        throw error;
+      if (commentsError) {
+        console.error("[ThreadCardComments] Error fetching comments:", commentsError);
+        throw commentsError;
       }
       
-      console.log("[ThreadCardComments] Fetched comments:", data);
+      if (!commentsData || commentsData.length === 0) {
+        setComments([]);
+        setLoading(false);
+        return;
+      }
       
-      if (!data) return;
-      
-      // Process comments to count votes
+      // Process comments to include user profiles and vote counts
       const processedComments = await Promise.all(
-        data.map(async (comment) => {
+        commentsData.map(async (comment) => {
+          // Get user profile for comment
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', comment.user_id)
+            .single();
+          
           // Count upvotes for comment
           const { count: upvotes } = await supabase
             .from('votes')
@@ -83,15 +91,12 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
             .eq('comment_id', comment.id)
             .eq('vote_type', 'down');
           
-          // Extract profile data from the join result
-          const profile = comment.profiles ? comment.profiles[0] : null;
-          
           return {
             id: comment.id,
             content: comment.content,
             author: {
-              name: profile?.username || 'Anonymous',
-              avatar: profile?.avatar_url
+              name: profileData?.username || 'Anonymous',
+              avatar: profileData?.avatar_url
             },
             votes: ((upvotes || 0) - (downvotes || 0)),
             createdAt: new Date(comment.created_at).toLocaleDateString('en-US', {
