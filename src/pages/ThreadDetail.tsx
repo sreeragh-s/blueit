@@ -1,6 +1,6 @@
 
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,16 +14,47 @@ import CommentsSection from "@/components/CommentsSection";
 import ThreadLoadingState from "@/components/ThreadLoadingState";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const ThreadDetail = () => {
   const { threadId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [threadExists, setThreadExists] = useState<boolean | null>(null);
   
-  // Check if threadId is valid and navigate away if not - moved to useEffect
+  // Check if thread exists in database first
   useEffect(() => {
-    if (!threadId || isNaN(Number(threadId))) {
+    const checkThreadExists = async () => {
+      if (!threadId) {
+        setThreadExists(false);
+        return;
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from('threads')
+          .select('id')
+          .eq('id', threadId)
+          .single();
+          
+        if (error || !data) {
+          setThreadExists(false);
+        } else {
+          setThreadExists(true);
+        }
+      } catch (error) {
+        console.error("Error checking thread:", error);
+        setThreadExists(false);
+      }
+    };
+    
+    checkThreadExists();
+  }, [threadId]);
+  
+  // Navigate away if thread doesn't exist
+  useEffect(() => {
+    if (threadExists === false) {
       navigate('/');
       toast({
         title: "Invalid thread",
@@ -31,13 +62,33 @@ const ThreadDetail = () => {
         variant: "destructive"
       });
     }
-  }, [threadId, navigate, toast]);
+  }, [threadExists, navigate, toast]);
 
-  // Prevent rendering the rest of the component if threadId is invalid
-  if (!threadId || isNaN(Number(threadId))) {
-    return null;
+  // Don't load the hook until we know the thread exists
+  const threadDetailHook = threadExists ? useThreadDetail(threadId as string) : null;
+  
+  if (threadExists === null) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container flex">
+          <Sidebar />
+          <main className="flex-1 p-4 lg:p-6 flex justify-center items-center">
+            <ThreadLoadingState />
+          </main>
+        </div>
+      </div>
+    );
   }
-
+  
+  if (threadExists === false) {
+    return null; // Will redirect in useEffect
+  }
+  
+  if (!threadDetailHook) {
+    return null; // Should never happen, but TypeScript safety
+  }
+  
   const {
     thread,
     comments,
@@ -51,7 +102,7 @@ const ThreadDetail = () => {
     handleToggleSave,
     handleShare,
     handleSubmitComment
-  } = useThreadDetail(threadId);
+  } = threadDetailHook;
   
   if (loading) {
     return (

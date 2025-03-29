@@ -9,32 +9,37 @@ interface ThreadListProps {
 const ThreadList = ({ threads }: ThreadListProps) => {
   return (
     <>
-      {threads.map((thread) => (
-        <ThreadCard 
-          key={thread.id} 
-          thread={{
-            id: Number(thread.id), // Convert string to number
-            title: thread.title,
-            content: thread.content,
-            author: {
-              name: thread.author.name,
-              avatar: thread.author.avatar
-            },
-            community: {
-              name: thread.community.name,
-              id: Number(thread.community.id) // Convert string to number
-            },
-            votes: thread.votes,
-            commentCount: thread.commentCount,
-            tags: thread.tags,
-            createdAt: new Date(thread.created_at).toLocaleDateString('en-US', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric'
-            })
-          }} 
-        />
-      ))}
+      {threads.map((thread) => {
+        // Ensure thread has a valid ID before rendering
+        if (!thread.id) return null;
+        
+        return (
+          <ThreadCard 
+            key={thread.id} 
+            thread={{
+              id: thread.id, // Keep as string, no conversion
+              title: thread.title,
+              content: thread.content,
+              author: {
+                name: thread.author.name,
+                avatar: thread.author.avatar
+              },
+              community: {
+                name: thread.community.name,
+                id: thread.community.id // Keep as string, no conversion
+              },
+              votes: thread.votes,
+              commentCount: thread.commentCount,
+              tags: thread.tags,
+              createdAt: new Date(thread.created_at).toLocaleDateString('en-US', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+              })
+            }} 
+          />
+        );
+      })}
     </>
   );
 };

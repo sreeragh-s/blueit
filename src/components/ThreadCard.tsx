@@ -22,12 +22,12 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
   const [votes, setVotes] = useState(thread.votes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [saved, setSaved] = useState(false);
-  const threadId = String(thread.id);
+  
+  const threadId = thread?.id ? String(thread.id) : null;
 
-  // Check if the user has voted on or saved this thread
   useEffect(() => {
     const checkUserInteractions = async () => {
-      if (!user || !threadId || threadId === 'NaN') return;
+      if (!user || !threadId) return;
       
       await checkUserVote();
       await checkIfSaved();
@@ -37,7 +37,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
   }, [user, threadId]);
 
   const checkUserVote = async () => {
-    if (!user || !threadId || threadId === 'NaN') return;
+    if (!user || !threadId) return;
     
     try {
       const { data } = await supabase
@@ -45,7 +45,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
         .select('vote_type')
         .eq('user_id', user.id)
         .eq('thread_id', threadId)
-        .single();
+        .maybeSingle();
       
       if (data) {
         setUserVote(data.vote_type as 'up' | 'down');
@@ -56,7 +56,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
   };
 
   const checkIfSaved = async () => {
-    if (!user || !threadId || threadId === 'NaN') return;
+    if (!user || !threadId) return;
     
     try {
       const { data } = await supabase
@@ -64,7 +64,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
         .select('id')
         .eq('user_id', user.id)
         .eq('thread_id', threadId)
-        .single();
+        .maybeSingle();
       
       setSaved(!!data);
     } catch (error) {
@@ -82,18 +82,25 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
       return;
     }
     
+    if (!threadId) {
+      toast({
+        title: "Error",
+        description: "Invalid thread. Cannot vote.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
-      // Check if user has already voted
       const { data: existingVoteData } = await supabase
         .from('votes')
         .select('*')
-        .eq('thread_id', thread.id.toString())
+        .eq('thread_id', threadId)
         .eq('user_id', user.id)
         .maybeSingle();
         
       if (existingVoteData) {
         if (existingVoteData.vote_type === type) {
-          // Remove vote if clicking same button again
           await supabase
             .from('votes')
             .delete()
@@ -107,7 +114,6 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
             description: "Your vote has been removed",
           });
         } else {
-          // Update vote if changing vote type
           await supabase
             .from('votes')
             .update({ vote_type: type })
@@ -122,11 +128,10 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
           });
         }
       } else {
-        // Create new vote
         await supabase
           .from('votes')
           .insert({
-            thread_id: thread.id.toString(),
+            thread_id: threadId,
             user_id: user.id,
             vote_type: type
           });
@@ -159,15 +164,23 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
       return;
     }
     
+    if (!threadId) {
+      toast({
+        title: "Error",
+        description: "Invalid thread. Cannot save.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       if (saved) {
-        // Remove bookmark
         const { data: bookmarkData } = await supabase
           .from('bookmarks')
           .select('id')
-          .eq('thread_id', thread.id.toString())
+          .eq('thread_id', threadId)
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
           
         if (bookmarkData) {
           await supabase
@@ -182,11 +195,10 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
           description: "Thread removed from your saved items",
         });
       } else {
-        // Add bookmark
         await supabase
           .from('bookmarks')
           .insert({
-            thread_id: thread.id.toString(),
+            thread_id: threadId,
             user_id: user.id
           });
         
@@ -207,7 +219,16 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
   };
 
   const handleShare = () => {
-    const url = `${window.location.origin}/thread/${thread.id}`;
+    if (!threadId) {
+      toast({
+        title: "Error",
+        description: "Cannot share invalid thread.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const url = `${window.location.origin}/thread/${threadId}`;
     navigator.clipboard.writeText(url);
     toast({
       title: "Link copied",
@@ -215,8 +236,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
     });
   };
 
-  // Prevent rendering with invalid thread IDs
-  if (!thread.id || isNaN(Number(thread.id))) {
+  if (!thread || !threadId) {
     return null;
   }
 
@@ -256,7 +276,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
               </span>
             </div>
             
-            <Link to={`/thread/${thread.id}`}>
+            <Link to={`/thread/${threadId}`}>
               <h3 className="text-lg font-semibold mb-2 hover:text-primary transition-colors">
                 {thread.title}
               </h3>
@@ -287,7 +307,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
       
       <CardFooter className="px-4 py-2 flex justify-between border-t bg-muted/20">
         <Button variant="ghost" size="sm" asChild>
-          <Link to={`/thread/${thread.id}`} className="flex items-center gap-1">
+          <Link to={`/thread/${threadId}`} className="flex items-center gap-1">
             <MessageSquare size={16} />
             <span>{thread.commentCount} Comments</span>
           </Link>

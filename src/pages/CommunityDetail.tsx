@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -53,54 +52,6 @@ const CommunityDetail = () => {
       fetchCommunityThreads();
     }
   }, [communityId, sortOption]);
-  
-  const fetchCommunityData = async () => {
-    if (!communityId) return;
-    
-    try {
-      setLoading(true);
-      
-      // Fetch community details
-      const { data: communityData, error: communityError } = await supabase
-        .from('communities')
-        .select('*')
-        .eq('id', communityId)
-        .single();
-      
-      if (communityError) {
-        throw communityError;
-      }
-      
-      setCommunity(communityData);
-      
-      // Check if user is a member and their role
-      if (user) {
-        const { data: memberData, error: memberError } = await supabase
-          .from('community_members')
-          .select('role')
-          .eq('community_id', communityId)
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        if (!memberError && memberData) {
-          setIsJoined(true);
-          setIsAdmin(memberData.role === 'admin');
-        } else {
-          setIsJoined(false);
-          setIsAdmin(false);
-        }
-      }
-    } catch (error: any) {
-      console.error("Error fetching community:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load community data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
   
   const fetchCommunityThreads = async () => {
     if (!communityId) return;
@@ -205,6 +156,54 @@ const CommunityDetail = () => {
       });
     } finally {
       setThreadsLoading(false);
+    }
+  };
+
+  const fetchCommunityData = async () => {
+    if (!communityId) return;
+    
+    try {
+      setLoading(true);
+      
+      // Fetch community details
+      const { data: communityData, error: communityError } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('id', communityId)
+        .single();
+      
+      if (communityError) {
+        throw communityError;
+      }
+      
+      setCommunity(communityData);
+      
+      // Check if user is a member and their role
+      if (user) {
+        const { data: memberData, error: memberError } = await supabase
+          .from('community_members')
+          .select('role')
+          .eq('community_id', communityId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (!memberError && memberData) {
+          setIsJoined(true);
+          setIsAdmin(memberData.role === 'admin');
+        } else {
+          setIsJoined(false);
+          setIsAdmin(false);
+        }
+      }
+    } catch (error: any) {
+      console.error("Error fetching community:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load community data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
