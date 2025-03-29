@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BotIcon } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -78,11 +79,12 @@ const Navbar = () => {
         
         <div className="flex items-center gap-2 mr-4">
           <Link to="/" className="flex items-center space-x-2">
-            <span className="font-bold text-xl">Blueit</span>
+            <span className="flex font-bold text-xl"><BotIcon className="text-primary mr-2"/>Blueit</span>
+            
           </Link>
         </div>
         
-        <div className="relative flex-grow max-w-md mx-4 hidden md:flex">
+        {/* <div className="relative flex-grow max-w-md mx-4 hidden md:flex">
           <form onSubmit={handleSearch} className="relative w-full">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -93,7 +95,7 @@ const Navbar = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </form>
-        </div>
+        </div> */}
         
         <div className="flex items-center gap-4 ml-auto">
           {user ? (
