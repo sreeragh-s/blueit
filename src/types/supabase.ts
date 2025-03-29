@@ -10,6 +10,7 @@ export type Tag = Database['public']['Tables']['tags']['Row'];
 export type ThreadTag = Database['public']['Tables']['thread_tags']['Row'];
 export type Community = Database['public']['Tables']['communities']['Row'];
 export type CommunityMember = Database['public']['Tables']['community_members']['Row'];
+export type Profile = Database['public']['Tables']['profiles']['Row'];
 
 // Enhanced type for threads with relations
 export interface ThreadWithRelations extends Thread {
@@ -44,4 +45,14 @@ export interface ThreadCardProps {
   commentCount: number;
   tags?: string[];
   createdAt: string;
+}
+
+// Enhanced types for Supabase query results
+export interface ThreadQueryResult extends Thread {
+  profiles?: Profile | null;
+  communities?: Community | null;
+}
+
+export interface CommentQueryResult extends Comment {
+  profiles?: Profile | null;
 }

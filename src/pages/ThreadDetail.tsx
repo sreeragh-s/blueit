@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -22,22 +21,26 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useThread } from "@/hooks/use-thread";
+import { ThreadWithRelations, ThreadQueryResult, CommentQueryResult } from "@/types/supabase";
+import ThreadLoadingState from "@/components/ThreadLoadingState";
 
 const ThreadDetail = () => {
   const { threadId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [thread, setThread] = useState<any>(null);
+  const [thread, setThread] = useState<ThreadWithRelations | null>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [commentText, setCommentText] = useState("");
   const [votes, setVotes] = useState(0);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { voteThread, toggleBookmark, isVoting, isBookmarking } = useThread(threadId || '');
   
   useEffect(() => {
-    if (isNaN(Number(threadId))) {
+    if (!threadId || isNaN(Number(threadId))) {
       navigate('/');
       toast({
         title: "Invalid thread",
@@ -74,6 +77,9 @@ const ThreadDetail = () => {
       if (threadError) throw threadError;
       if (!threadData) throw new Error("Thread not found");
       
+      // Cast to our query result type
+      const typedThreadData = threadData as ThreadQueryResult;
+      
       // Count upvotes
       const { count: upvotes } = await supabase
         .from('votes')
@@ -105,20 +111,20 @@ const ThreadDetail = () => {
         .eq('thread_id', threadId);
       
       setThread({
-        ...threadData,
+        ...typedThreadData,
         author: {
-          id: threadData.profiles?.id,
-          name: threadData.profiles?.username || 'Anonymous',
-          avatar: threadData.profiles?.avatar_url
+          id: typedThreadData.profiles?.id || 'unknown',
+          name: typedThreadData.profiles?.username || 'Anonymous',
+          avatar: typedThreadData.profiles?.avatar_url
         },
         community: {
-          id: threadData.communities?.id,
-          name: threadData.communities?.name
+          id: typedThreadData.communities?.id || 'unknown',
+          name: typedThreadData.communities?.name || 'Unknown Community'
         },
         votes: ((upvotes || 0) - (downvotes || 0)),
         commentCount: commentCount || 0,
         tags: tags,
-        createdAt: new Date(threadData.created_at).toLocaleDateString('en-US', {
+        createdAt: new Date(typedThreadData.created_at).toLocaleDateString('en-US', {
           day: 'numeric',
           month: 'short',
           year: 'numeric'
@@ -159,6 +165,9 @@ const ThreadDetail = () => {
       // Process comments to count votes
       const processedComments = await Promise.all(
         commentsData.map(async (comment) => {
+          // Cast to our query result type
+          const typedComment = comment as CommentQueryResult;
+          
           // Count upvotes for comment
           const { count: upvotes } = await supabase
             .from('votes')
@@ -174,14 +183,14 @@ const ThreadDetail = () => {
             .eq('vote_type', 'down');
           
           return {
-            id: comment.id,
-            content: comment.content,
+            id: typedComment.id,
+            content: typedComment.content,
             author: {
-              name: comment.profiles?.username || 'Anonymous',
-              avatar: comment.profiles?.avatar_url
+              name: typedComment.profiles?.username || 'Anonymous',
+              avatar: typedComment.profiles?.avatar_url
             },
             votes: ((upvotes || 0) - (downvotes || 0)),
-            createdAt: new Date(comment.created_at).toLocaleDateString('en-US', {
+            createdAt: new Date(typedComment.created_at).toLocaleDateString('en-US', {
               day: 'numeric',
               month: 'short',
               year: 'numeric',
@@ -239,107 +248,29 @@ const ThreadDetail = () => {
   };
   
   const handleVote = async (type: 'up' | 'down') => {
-    if (!user) {
-      toast({
-        title: "Sign in required",
-        description: "You need to sign in to vote.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      // Check if vote exists
-      const { data: existingVote } = await supabase
-        .from('votes')
-        .select('id, vote_type')
-        .eq('user_id', user.id)
-        .eq('thread_id', threadId)
-        .maybeSingle();
-      
-      if (existingVote) {
-        if (existingVote.vote_type === type) {
-          // Remove vote if clicking the same button
-          await supabase
-            .from('votes')
-            .delete()
-            .eq('id', existingVote.id);
-          
-          setVotes(type === 'up' ? votes - 1 : votes + 1);
-          setUserVote(null);
-        } else {
-          // Change vote type
-          await supabase
-            .from('votes')
-            .update({ vote_type: type })
-            .eq('id', existingVote.id);
-          
-          setVotes(type === 'up' ? votes + 2 : votes - 2);
-          setUserVote(type);
-        }
-      } else {
-        // Create new vote
-        await supabase
-          .from('votes')
-          .insert({
-            user_id: user.id,
-            thread_id: threadId,
-            vote_type: type
-          });
-        
+    const success = await voteThread(type);
+    if (success) {
+      // Update UI
+      if (userVote === type) {
+        // Remove vote
+        setVotes(type === 'up' ? votes - 1 : votes + 1);
+        setUserVote(null);
+      } else if (userVote === null) {
+        // Add new vote
         setVotes(type === 'up' ? votes + 1 : votes - 1);
         setUserVote(type);
+      } else {
+        // Change vote type
+        setVotes(type === 'up' ? votes + 2 : votes - 2);
+        setUserVote(type);
       }
-    } catch (error) {
-      console.error('Error handling vote:', error);
-      toast({
-        title: "Error",
-        description: "Failed to register your vote. Please try again.",
-        variant: "destructive"
-      });
     }
   };
   
   const handleToggleBookmark = async () => {
-    if (!user) {
-      toast({
-        title: "Sign in required",
-        description: "You need to sign in to save threads.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      if (saved) {
-        // Remove bookmark
-        await supabase
-          .from('bookmarks')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('thread_id', threadId);
-      } else {
-        // Add bookmark
-        await supabase
-          .from('bookmarks')
-          .insert({
-            user_id: user.id,
-            thread_id: threadId
-          });
-      }
-      
-      setSaved(!saved);
-      toast({
-        title: saved ? "Removed from saved" : "Saved",
-        description: saved ? "Thread removed from your saved items." : "Thread added to your saved items.",
-      });
-    } catch (error) {
-      console.error('Error toggling bookmark:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save thread. Please try again.",
-        variant: "destructive"
-      });
+    const result = await toggleBookmark();
+    if (result !== null) {
+      setSaved(result);
     }
   };
   
@@ -401,7 +332,6 @@ const ThreadDetail = () => {
     }
   };
   
-  // Handle sharing the thread
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     toast({
@@ -410,7 +340,6 @@ const ThreadDetail = () => {
     });
   };
   
-  // Format the content with line breaks
   const formatContent = (content: string) => {
     if (!content) return [];
     
@@ -435,10 +364,7 @@ const ThreadDetail = () => {
           <Sidebar />
           
           <main className="flex-1 p-4 lg:p-6 flex justify-center items-center">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-              <p className="text-muted-foreground">Loading thread...</p>
-            </div>
+            <ThreadLoadingState />
           </main>
         </div>
       </div>
@@ -489,6 +415,7 @@ const ThreadDetail = () => {
                   size="icon" 
                   className={cn("h-8 w-8 rounded-full", userVote === 'up' ? "text-primary" : "")}
                   onClick={() => handleVote('up')}
+                  disabled={isVoting}
                 >
                   <ThumbsUp size={16} />
                 </Button>
@@ -498,6 +425,7 @@ const ThreadDetail = () => {
                   size="icon" 
                   className={cn("h-8 w-8 rounded-full", userVote === 'down' ? "text-destructive" : "")}
                   onClick={() => handleVote('down')}
+                  disabled={isVoting}
                 >
                   <ThumbsDown size={16} />
                 </Button>
@@ -556,6 +484,7 @@ const ThreadDetail = () => {
                   size="sm" 
                   className={cn("flex items-center gap-1", saved ? "text-primary" : "")}
                   onClick={handleToggleBookmark}
+                  disabled={isBookmarking}
                 >
                   <Bookmark size={16} />
                   <span>{saved ? "Saved" : "Save"}</span>
