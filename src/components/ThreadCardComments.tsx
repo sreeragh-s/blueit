@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface ThreadCardCommentsProps {
   threadId: string;  // This should be a UUID from the database
   commentCount: number;
+  onCommentCountChange?: (count: number) => void;
 }
 
 interface ProfileData {
@@ -16,7 +17,11 @@ interface ProfileData {
   avatar_url?: string;
 }
 
-const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps) => {
+const ThreadCardComments = ({ 
+  threadId, 
+  commentCount,
+  onCommentCountChange
+}: ThreadCardCommentsProps) => {
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -112,6 +117,16 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
       
       console.log("[ThreadCardComments] Processed comments:", processedComments);
       setComments(processedComments);
+      
+      // Get total comment count
+      const { count: totalCount, error: countError } = await supabase
+        .from('comments')
+        .select('id', { count: 'exact' })
+        .eq('thread_id', threadId);
+        
+      if (!countError && totalCount !== null && onCommentCountChange) {
+        onCommentCountChange(totalCount);
+      }
     } catch (error) {
       console.error('[ThreadCardComments] Error fetching comments:', error);
     } finally {
