@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -57,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -68,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      console.log("Profile fetched:", data);
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -92,10 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .limit(1);
       
       if (checkError) {
+        console.error("Error checking username:", checkError);
         throw new Error(checkError.message);
       }
       
       if (existingUsers && existingUsers.length > 0) {
+        console.log("Username already taken:", username);
         toast({
           title: "Username already taken",
           description: "Please choose a different username.",
@@ -104,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       
+      console.log("Signing up user with email:", email);
       // Proceed with signup if username is available
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -116,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
+        console.error("Signup error:", error);
         toast({
           title: "Sign Up Failed",
           description: error.message,
@@ -124,11 +132,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      console.log("Signup successful:", data);
       toast({
         title: "Sign Up Successful",
         description: "Welcome to Blueit!",
       });
     } catch (error: any) {
+      console.error("Signup error:", error);
       toast({
         title: "Sign Up Failed",
         description: error.message || "An unexpected error occurred",
@@ -143,12 +153,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       
+      console.log("Signing in user with email:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error("Login error:", error);
         toast({
           title: "Sign In Failed",
           description: error.message,
@@ -157,11 +169,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      console.log("Login successful:", data);
       toast({
         title: "Sign In Successful",
         description: "Welcome back!",
       });
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Sign In Failed",
         description: error.message || "An unexpected error occurred",

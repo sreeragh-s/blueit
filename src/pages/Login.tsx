@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, BotIcon } from "lucide-react";
 
 // Form schemas
 const loginSchema = z.object({
@@ -32,14 +32,17 @@ const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { signIn, signUp, user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'login';
+  const [activeTab, setActiveTab] = useState<"login" | "signup">(defaultTab as "login" | "signup");
   const [isLoading, setIsLoading] = useState(false);
 
   // Redirect if already logged in
-  if (user) {
-    navigate("/");
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -64,18 +67,13 @@ const Login = () => {
     setIsLoading(true);
     try {
       await signIn(values.email, values.password);
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      navigate("/");
+      // Note: No need to call navigate here as the useEffect will handle redirect when user state updates
     } catch (error: any) {
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -86,9 +84,12 @@ const Login = () => {
       await signUp(values.email, values.password, values.username);
       toast({
         title: "Sign up successful",
-        description: "Please check your email to confirm your account.",
+        description: "Welcome to Blueit! You can now log in.",
       });
+      // Switch to login tab after successful signup
       setActiveTab("login");
+      // Reset signup form
+      signupForm.reset();
     } catch (error: any) {
       toast({
         title: "Sign up failed",
@@ -104,7 +105,10 @@ const Login = () => {
     <div className="flex min-h-screen items-center justify-center p-4 bg-muted/30">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Community Threads</CardTitle>
+          <div className="flex justify-center items-center mb-4">
+            <BotIcon className="h-8 w-8 text-primary mr-2" />
+            <CardTitle className="text-2xl">Blueit</CardTitle>
+          </div>
           <CardDescription>Sign in to your account or create a new one</CardDescription>
         </CardHeader>
         
