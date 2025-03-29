@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useThreadDetail } from "@/hooks/use-thread-detail";
 import MainLayout from "@/components/layout/MainLayout";
@@ -12,6 +11,7 @@ import ThreadVoteSection from "@/components/thread/ThreadVoteSection";
 import ThreadBookmarkSection from "@/components/thread/ThreadBookmarkSection";
 import { Share } from "lucide-react";
 import { CommentSection } from "@/components/comments/CommentSection";
+import ThreadActions from "@/components/ThreadActions";
 
 const ThreadDetail = () => {
   const { threadId } = useParams<{ threadId: string }>();
@@ -89,21 +89,13 @@ const ThreadDetail = () => {
           </div>
           
           <div className="flex justify-end gap-2 mt-4 border-t pt-4">
-            <ThreadBookmarkSection
-              threadId={thread.id}
+            <ThreadActions
               saved={saved}
               isBookmarking={isBookmarking}
               onToggleSave={handleToggleSave}
+              onShare={handleShare}
+              threadContent={thread.content}
             />
-            
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleShare}
-            >
-              <Share size={16} className="mr-2" />
-              Share
-            </Button>
           </div>
         </div>
       </Card>

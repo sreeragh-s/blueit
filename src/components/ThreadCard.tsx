@@ -155,6 +155,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
             isBookmarking={isBookmarking} 
             onToggleSave={handleToggleSave} 
             onShare={handleShare}
+            threadContent={thread.content}
           />
         </div>
         
