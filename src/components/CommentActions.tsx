@@ -46,6 +46,7 @@ const CommentActions = ({
           size="sm" 
           className="h-7 text-xs"
           onClick={onReply}
+          type="button"
         >
           <Reply size={14} className="mr-1" />
           Reply
