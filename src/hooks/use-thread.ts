@@ -23,38 +23,61 @@ export const useThread = (threadId: string) => {
     setIsVoting(true);
     try {
       // Check if user has already voted
-      const { data: existingVote } = await supabase
+      const { data: existingVote, error: voteError } = await supabase
         .from('votes')
-        .select('id, vote_type')
+        .select('*')
         .eq('thread_id', threadId)
         .eq('user_id', user.id)
         .maybeSingle();
+        
+      if (voteError) {
+        console.error('Error checking vote:', voteError);
+        throw voteError;
+      }
 
       if (existingVote) {
         if (existingVote.vote_type === voteType) {
           // Remove vote if clicking the same button again
-          await supabase
+          const { error: deleteError } = await supabase
             .from('votes')
             .delete()
             .eq('id', existingVote.id);
+            
+          if (deleteError) {
+            console.error('Error removing vote:', deleteError);
+            throw deleteError;
+          }
+          
           return true;
         } else {
           // Update vote if changing vote type
-          await supabase
+          const { error: updateError } = await supabase
             .from('votes')
             .update({ vote_type: voteType })
             .eq('id', existingVote.id);
+            
+          if (updateError) {
+            console.error('Error updating vote:', updateError);
+            throw updateError;
+          }
+          
           return true;
         }
       } else {
         // Create new vote
-        await supabase
+        const { error: insertError } = await supabase
           .from('votes')
           .insert({
             thread_id: threadId,
             user_id: user.id,
             vote_type: voteType
           });
+          
+        if (insertError) {
+          console.error('Error creating vote:', insertError);
+          throw insertError;
+        }
+        
         return true;
       }
     } catch (error) {
@@ -83,28 +106,45 @@ export const useThread = (threadId: string) => {
     setIsBookmarking(true);
     try {
       // Check if already bookmarked
-      const { data: existingBookmark } = await supabase
+      const { data: existingBookmark, error: bookmarkError } = await supabase
         .from('bookmarks')
-        .select('id')
+        .select('*')
         .eq('thread_id', threadId)
         .eq('user_id', user.id)
         .maybeSingle();
+        
+      if (bookmarkError) {
+        console.error('Error checking bookmark:', bookmarkError);
+        throw bookmarkError;
+      }
 
       if (existingBookmark) {
         // Remove bookmark
-        await supabase
+        const { error: deleteError } = await supabase
           .from('bookmarks')
           .delete()
           .eq('id', existingBookmark.id);
+          
+        if (deleteError) {
+          console.error('Error removing bookmark:', deleteError);
+          throw deleteError;
+        }
+        
         return false; // not bookmarked anymore
       } else {
         // Add bookmark
-        await supabase
+        const { error: insertError } = await supabase
           .from('bookmarks')
           .insert({
             thread_id: threadId,
             user_id: user.id
           });
+          
+        if (insertError) {
+          console.error('Error adding bookmark:', insertError);
+          throw insertError;
+        }
+        
         return true; // now bookmarked
       }
     } catch (error) {

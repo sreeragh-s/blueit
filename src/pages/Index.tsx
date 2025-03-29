@@ -60,7 +60,7 @@ const Index = () => {
     const fetchThreads = async () => {
       setIsLoading(true);
       try {
-        // Get threads with community info
+        // Get threads
         const { data: threadsData, error: threadsError } = await supabase
           .from('threads')
           .select(`
@@ -68,49 +68,91 @@ const Index = () => {
             title, 
             content, 
             created_at,
-            communities:community_id (id, name)
+            user_id,
+            community_id
           `)
           .order('created_at', { ascending: false });
         
-        if (threadsError) throw threadsError;
+        if (threadsError) {
+          console.error('Error fetching threads:', threadsError);
+          throw threadsError;
+        }
+        
+        if (!threadsData || threadsData.length === 0) {
+          setThreads([]);
+          setIsLoading(false);
+          return;
+        }
         
         // Process the threads to match our frontend structure
         const processedThreads = await Promise.all(
           threadsData.map(async (thread) => {
             // Get author info from profiles
-            const { data: authorData } = await supabase
+            const { data: authorData, error: authorError } = await supabase
               .from('profiles')
               .select('id, username, avatar_url')
               .eq('id', thread.user_id)
               .single();
             
-            // Get vote count
-            const { count: upvotes } = await supabase
+            if (authorError) {
+              console.error('Error fetching author data:', authorError);
+            }
+            
+            // Get community info
+            const { data: communityData, error: communityError } = await supabase
+              .from('communities')
+              .select('id, name')
+              .eq('id', thread.community_id)
+              .single();
+            
+            if (communityError) {
+              console.error('Error fetching community data:', communityError);
+            }
+            
+            // Get upvotes count
+            const { count: upvotes, error: upvotesError } = await supabase
               .from('votes')
               .select('id', { count: 'exact' })
               .eq('thread_id', thread.id)
               .eq('vote_type', 'up');
               
-            const { count: downvotes } = await supabase
+            if (upvotesError) {
+              console.error('Error counting upvotes:', upvotesError);
+            }
+            
+            // Get downvotes count
+            const { count: downvotes, error: downvotesError } = await supabase
               .from('votes')
               .select('id', { count: 'exact' })
               .eq('thread_id', thread.id)
               .eq('vote_type', 'down');
             
+            if (downvotesError) {
+              console.error('Error counting downvotes:', downvotesError);
+            }
+            
             // Get comment count
-            const { count: commentCount } = await supabase
+            const { count: commentCount, error: commentCountError } = await supabase
               .from('comments')
               .select('id', { count: 'exact' })
               .eq('thread_id', thread.id);
             
+            if (commentCountError) {
+              console.error('Error counting comments:', commentCountError);
+            }
+            
             // Get tags
-            const { data: tagsData } = await supabase
+            const { data: tagsData, error: tagsError } = await supabase
               .from('thread_tags')
-              .select('tags:tag_id (name)')
+              .select('tags:tag_id(name)')
               .eq('thread_id', thread.id);
             
-            const tags = tagsData 
-              ? tagsData.map(tag => tag.tags.name) 
+            if (tagsError) {
+              console.error('Error fetching tags:', tagsError);
+            }
+            
+            const tags = tagsData && tagsData.length > 0
+              ? tagsData.map(tag => tag.tags?.name).filter(Boolean)
               : [];
               
             return {
@@ -119,8 +161,8 @@ const Index = () => {
               content: thread.content,
               created_at: thread.created_at,
               community: {
-                id: thread.communities?.id || '',
-                name: thread.communities?.name || 'Unknown'
+                id: communityData?.id || '',
+                name: communityData?.name || 'Unknown'
               },
               author: {
                 id: authorData?.id || '',
