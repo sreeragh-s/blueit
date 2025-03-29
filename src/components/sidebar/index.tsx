@@ -43,8 +43,8 @@ const Sidebar = ({ className }: SidebarProps) => {
   
   // Desktop sidebar
   return (
-    <div className={cn("w-[260px] shrink-0 border-r bg-background h-screen hidden md:block", className)}>
-      <div className="flex flex-col h-full overflow-hidden">
+    <div className={cn("w-[260px] shrink-0 border-r bg-background h-[calc(100vh-2rem)] overflow-y-auto hidden md:block", className)}>
+      <div className="flex flex-col h-full">
         {sidebarContent}
       </div>
     </div>
