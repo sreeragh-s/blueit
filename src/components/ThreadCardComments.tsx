@@ -21,7 +21,6 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
-  // Add debug information about the incoming threadId
   console.log("[ThreadCardComments] Received threadId:", {
     value: threadId,
     type: typeof threadId,
@@ -32,7 +31,6 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
   const fetchComments = async () => {
     if (!threadId) return;
     
-    // Log the threadId for debugging
     console.log("[ThreadCardComments] Fetching comments for threadId:", threadId);
     
     // Validate UUID format for threadId
@@ -44,6 +42,7 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
     
     try {
       setLoading(true);
+      // Fixed query to use proper join syntax for profiles
       const { data, error } = await supabase
         .from('comments')
         .select(`
@@ -51,7 +50,7 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
           content,
           created_at,
           user_id,
-          profiles:user_id(id, username, avatar_url)
+          profiles(id, username, avatar_url)
         `)
         .eq('thread_id', threadId)
         .is('parent_id', null) // Only get top-level comments
@@ -84,15 +83,15 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
             .eq('comment_id', comment.id)
             .eq('vote_type', 'down');
           
-          // Make sure we have a valid profiles object from the join
-          const authorProfile = comment.profiles as ProfileData || {};
+          // Extract profile data from the join result
+          const profile = comment.profiles ? comment.profiles[0] : null;
           
           return {
             id: comment.id,
             content: comment.content,
             author: {
-              name: authorProfile?.username || 'Anonymous',
-              avatar: authorProfile?.avatar_url
+              name: profile?.username || 'Anonymous',
+              avatar: profile?.avatar_url
             },
             votes: ((upvotes || 0) - (downvotes || 0)),
             createdAt: new Date(comment.created_at).toLocaleDateString('en-US', {
@@ -135,7 +134,7 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
         {loading ? (
           <div className="p-3 text-center text-sm text-muted-foreground">Loading comments...</div>
         ) : comments.length > 0 ? (
-          <div className="divide-y">
+          <div className="space-y-3">
             {comments.map((comment) => (
               <ThreadCardComment key={comment.id} comment={comment} />
             ))}
