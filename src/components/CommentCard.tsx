@@ -5,6 +5,7 @@ import { useCommentVote } from "@/hooks/use-comment-vote";
 import CommentActions from "@/components/CommentActions";
 import CommentHeader from "@/components/CommentHeader";
 import CommentReplyForm from "@/components/CommentReplyForm";
+import { cn } from "@/lib/utils";
 
 interface CommentProps {
   comment: {
@@ -42,8 +43,20 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
   };
   
   const toggleReplyForm = () => {
-    setShowReplyForm(!showReplyForm);
-    console.log("Reply form toggled:", !showReplyForm, "Current value:", showReplyForm); // Enhanced debug log
+    console.log("Reply button clicked:", {
+      currentShowReplyForm: showReplyForm,
+      commentId: comment.id,
+      level: level
+    });
+    
+    // Add more detailed logging
+    setShowReplyForm(prev => {
+      console.log("Setting showReplyForm from", prev, "to", !prev);
+      return !prev;
+    });
+    
+    // Add additional debugging information
+    console.trace("Toggle Reply Form Stack Trace");
   };
   
   // Limit nesting to 5 levels deep
@@ -75,12 +88,27 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
             showReplyButton={level < maxLevel}
           />
           
+          {/* Add more explicit logging for reply form visibility */}
+          {console.log("Rendering reply form:", {
+            showReplyForm,
+            commentId: comment.id,
+            level: level
+          })}
+          
           {showReplyForm && (
-            <div className="mt-3 border-l-2 border-primary pl-3">
+            <div 
+              className="mt-3 border-l-2 border-primary pl-3"
+              // Add data attribute for easier debugging
+              data-comment-id={comment.id}
+              data-reply-form-visible={showReplyForm}
+            >
               <CommentReplyForm
                 commentId={comment.id}
                 onReplySubmitted={handleReplySubmitted}
-                onCancel={() => setShowReplyForm(false)}
+                onCancel={() => {
+                  console.log("Cancel reply form for comment:", comment.id);
+                  setShowReplyForm(false);
+                }}
               />
             </div>
           )}
