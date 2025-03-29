@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Thread, ThreadWithRelations } from "@/types/supabase";
 
-export const useThreads = (userId?: string) => {
+export const useThreads = (userId?: string, refreshKey?: number) => {
   const { toast } = useToast();
   const [threads, setThreads] = useState<ThreadWithRelations[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -128,7 +128,7 @@ export const useThreads = (userId?: string) => {
     };
     
     fetchThreads();
-  }, [userId, toast]);
+  }, [userId, refreshKey, toast]);
 
   return { threads, isLoading };
 };
