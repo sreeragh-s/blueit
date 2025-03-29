@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/sidebar";
+import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,9 +47,7 @@ const Index = () => {
       <Navbar />
       
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar className="flex-shrink-0" />
-        
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <MainLayout>
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold">Home Feed</h1>
             <Button asChild>
@@ -71,7 +70,7 @@ const Index = () => {
               <EmptyThreadsState />
             )}
           </ThreadFilterTabs>
-        </main>
+        </MainLayout>
       </div>
     </div>
   );
