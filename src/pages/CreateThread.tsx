@@ -1,16 +1,14 @@
+
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/sidebar";
+import MainLayout from "@/components/layout/MainLayout";
 import CreateThreadForm from "@/components/CreateThreadForm";
-import { ArrowLeft } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import ThreadHeader from "@/components/ThreadHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 const CreateThread = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [hasCommunities, setHasCommunities] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,16 +42,9 @@ const CreateThread = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <div className="container flex">
-        <Sidebar />
-        
-        <main className="flex-1 p-4 lg:p-6">
-          <Button variant="ghost" className="mb-4" asChild>
-            <Link to="/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to feed
-            </Link>
-          </Button>
+      <div className="flex flex-1 overflow-hidden w-full">
+        <MainLayout>
+          <ThreadHeader />
           
           <div className="max-w-3xl mx-auto">
             <h1 className="text-2xl font-bold mb-6">Create a New Thread</h1>
@@ -62,7 +53,7 @@ const CreateThread = () => {
               <CreateThreadForm />
             </div>
           </div>
-        </main>
+        </MainLayout>
       </div>
     </div>
   );
