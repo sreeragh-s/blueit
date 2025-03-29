@@ -47,11 +47,11 @@ const Index = () => {
   }
   
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar className="h-[calc(100vh-4rem)]" />
+        <Sidebar className="flex-shrink-0" />
         
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           <div className="flex justify-between items-center mb-6">

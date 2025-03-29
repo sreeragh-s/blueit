@@ -52,11 +52,11 @@ const ThreadDetail = () => {
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
-        <div className="container flex">
-          <Sidebar />
-          <main className="flex-1 p-4 lg:p-6 flex justify-center items-center">
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar className="flex-shrink-0" />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6 flex justify-center items-center">
             <ThreadLoadingState />
           </main>
         </div>
@@ -66,11 +66,11 @@ const ThreadDetail = () => {
   
   if (!thread) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
-        <div className="container flex">
-          <Sidebar />
-          <main className="flex-1 p-4 lg:p-6 flex justify-center items-center">
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar className="flex-shrink-0" />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6 flex justify-center items-center">
             <div className="text-center">
               <p className="text-muted-foreground mb-4">Thread not found or you don't have access to it.</p>
               <Button asChild>
@@ -84,11 +84,11 @@ const ThreadDetail = () => {
   }
   
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <div className="container flex">
-        <Sidebar />
-        <main className="flex-1 p-4 lg:p-6">
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar className="flex-shrink-0" />
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           <ThreadHeader />
           
           <div className="thread-card mb-6">
