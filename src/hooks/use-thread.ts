@@ -36,7 +36,7 @@ export const useThread = (threadId: string) => {
         throw voteError;
       }
 
-      // Cast the result to our Vote type
+      // Cast to our Vote type
       const existingVote = existingVoteData as Vote | null;
 
       if (existingVote) {
@@ -61,7 +61,7 @@ export const useThread = (threadId: string) => {
           // Update vote if changing vote type
           const { error: updateError } = await supabase
             .from('votes')
-            .update({ vote_type: voteType })
+            .update({ vote_type: voteType } as Partial<Vote>)
             .eq('id', existingVote.id);
             
           if (updateError) {
@@ -134,7 +134,7 @@ export const useThread = (threadId: string) => {
         throw bookmarkError;
       }
 
-      // Cast the result to our Bookmark type
+      // Cast to our Bookmark type
       const existingBookmark = existingBookmarkData as Bookmark | null;
 
       if (existingBookmark) {
