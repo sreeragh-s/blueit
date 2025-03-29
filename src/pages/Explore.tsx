@@ -47,7 +47,7 @@ const Explore = () => {
         // Process communities to include member count
         const enhancedCommunitiesPromises = communitiesData.map(async (community) => {
           try {
-            // Get member count - our fixed RLS policy should allow this now
+            // Get member count - using a simple count query that shouldn't trigger recursion
             const { count, error: countError } = await supabase
               .from('community_members')
               .select('*', { count: 'exact', head: true })
