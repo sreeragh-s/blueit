@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCommentVote } from "@/hooks/use-comment-vote";
@@ -125,8 +124,5 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
     </div>
   );
 };
-
-// Helper function to add cn utility
-const cn = (...classes: any[]) => classes.filter(Boolean).join(' ');
 
 export default CommentCard;
