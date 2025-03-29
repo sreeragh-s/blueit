@@ -1,21 +1,6 @@
 
 import ThreadCard from "@/components/ThreadCard";
-import { Thread } from "@/types/supabase";
-
-interface ThreadWithRelations extends Thread {
-  author: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-  community: {
-    id: string;
-    name: string;
-  };
-  votes: number;
-  commentCount: number;
-  tags: string[];
-}
+import { ThreadWithRelations } from "@/types/supabase";
 
 interface ThreadListProps {
   threads: ThreadWithRelations[];

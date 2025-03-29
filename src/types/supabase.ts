@@ -1,50 +1,26 @@
 
-// Define types for our database schema
-export interface Thread {
-  id: string;
-  title: string;
-  content: string;
-  user_id: string;
-  community_id: string;
-  created_at: string;
-  updated_at: string;
-}
+import { Database } from "@/integrations/supabase/types";
 
-export interface Vote {
-  id: string;
-  user_id: string;
-  thread_id: string | null;
-  comment_id: string | null;
-  vote_type: 'up' | 'down';
-  created_at: string;
-}
+// Update existing interfaces to match Supabase database schema
+export type Thread = Database['public']['Tables']['threads']['Row'];
+export type Vote = Database['public']['Tables']['votes']['Row'];
+export type Comment = Database['public']['Tables']['comments']['Row'];
+export type Bookmark = Database['public']['Tables']['bookmarks']['Row'];
+export type Tag = Database['public']['Tables']['tags']['Row'];
+export type ThreadTag = Database['public']['Tables']['thread_tags']['Row'];
 
-export interface Comment {
-  id: string;
-  content: string;
-  user_id: string;
-  thread_id: string;
-  parent_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Bookmark {
-  id: string;
-  user_id: string;
-  thread_id: string;
-  created_at: string;
-}
-
-export interface Tag {
-  id: string;
-  name: string;
-  created_at: string;
-}
-
-export interface ThreadTag {
-  id: string;
-  thread_id: string;
-  tag_id: string;
-  created_at: string;
+// Enhanced type for threads with relations
+export interface ThreadWithRelations extends Thread {
+  author: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  community: {
+    id: string;
+    name: string;
+  };
+  votes: number;
+  commentCount: number;
+  tags: string[];
 }

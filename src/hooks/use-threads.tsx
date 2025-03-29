@@ -2,22 +2,7 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Thread } from "@/types/supabase";
-
-interface ThreadWithRelations extends Thread {
-  author: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-  community: {
-    id: string;
-    name: string;
-  };
-  votes: number;
-  commentCount: number;
-  tags: string[];
-}
+import { Thread, ThreadWithRelations } from "@/types/supabase";
 
 export const useThreads = (userId?: string) => {
   const { toast } = useToast();
@@ -30,7 +15,7 @@ export const useThreads = (userId?: string) => {
     const fetchThreads = async () => {
       setIsLoading(true);
       try {
-        // Get threads using type casting
+        // Correctly typed Supabase query
         const { data: threadsData, error: threadsError } = await supabase
           .from('threads')
           .select(`
@@ -43,92 +28,61 @@ export const useThreads = (userId?: string) => {
           `)
           .order('created_at', { ascending: false });
         
-        if (threadsError) {
-          console.error('Error fetching threads:', threadsError);
-          throw threadsError;
-        }
-        
-        if (!threadsData || threadsData.length === 0) {
+        if (threadsError) throw threadsError;
+        if (!threadsData?.length) {
           setThreads([]);
           setIsLoading(false);
           return;
         }
         
-        // Process the threads to match our frontend structure
+        // Process threads with proper async handling
         const processedThreads = await Promise.all(
           threadsData.map(async (thread) => {
-            const threadData = thread as Thread;
-            
-            // Get author info from profiles
-            const { data: authorData, error: authorError } = await supabase
+            // Fetch author
+            const { data: authorData } = await supabase
               .from('profiles')
               .select('id, username, avatar_url')
-              .eq('id', threadData.user_id)
+              .eq('id', thread.user_id)
               .single();
             
-            if (authorError) {
-              console.error('Error fetching author data:', authorError);
-            }
-            
-            // Get community info
-            const { data: communityData, error: communityError } = await supabase
+            // Fetch community
+            const { data: communityData } = await supabase
               .from('communities')
               .select('id, name')
-              .eq('id', threadData.community_id)
+              .eq('id', thread.community_id)
               .single();
             
-            if (communityError) {
-              console.error('Error fetching community data:', communityError);
-            }
-            
-            // Get upvotes count using type casting
-            const { count: upvotes, error: upvotesError } = await supabase
+            // Count upvotes
+            const { count: upvotes } = await supabase
               .from('votes')
               .select('id', { count: 'exact' })
-              .eq('thread_id', threadData.id)
+              .eq('thread_id', thread.id)
               .eq('vote_type', 'up');
-              
-            if (upvotesError) {
-              console.error('Error counting upvotes:', upvotesError);
-            }
             
-            // Get downvotes count using type casting
-            const { count: downvotes, error: downvotesError } = await supabase
+            // Count downvotes
+            const { count: downvotes } = await supabase
               .from('votes')
               .select('id', { count: 'exact' })
-              .eq('thread_id', threadData.id)
+              .eq('thread_id', thread.id)
               .eq('vote_type', 'down');
             
-            if (downvotesError) {
-              console.error('Error counting downvotes:', downvotesError);
-            }
-            
-            // Get comment count using type casting
-            const { count: commentCount, error: commentCountError } = await supabase
+            // Count comments
+            const { count: commentCount } = await supabase
               .from('comments')
               .select('id', { count: 'exact' })
-              .eq('thread_id', threadData.id);
+              .eq('thread_id', thread.id);
             
-            if (commentCountError) {
-              console.error('Error counting comments:', commentCountError);
-            }
-            
-            // Get tags using type casting
-            const { data: tagsData, error: tagsError } = await supabase
+            // Fetch tags
+            const { data: tagsData } = await supabase
               .from('thread_tags')
-              .select('tags:tag_id(name)')
-              .eq('thread_id', threadData.id);
+              .select('tags:tag_id(name)');
             
-            if (tagsError) {
-              console.error('Error fetching tags:', tagsError);
-            }
+            const tags = tagsData?.map(tag => 
+              (tag.tags as any)?.name
+            ).filter(Boolean) || [];
             
-            const tags = tagsData && tagsData.length > 0
-              ? tagsData.map(tag => (tag.tags as any)?.name).filter(Boolean)
-              : [];
-              
             return {
-              ...threadData,
+              ...thread,
               community: {
                 id: communityData?.id || '',
                 name: communityData?.name || 'Unknown'
@@ -138,10 +92,10 @@ export const useThreads = (userId?: string) => {
                 name: authorData?.username || 'Anonymous',
                 avatar: authorData?.avatar_url
               },
-              votes: ((upvotes || 0) - (downvotes || 0)) as number,
-              commentCount: commentCount as number || 0,
-              tags: tags as string[]
-            };
+              votes: ((upvotes || 0) - (downvotes || 0)),
+              commentCount: commentCount || 0,
+              tags: tags
+            } as ThreadWithRelations;
           })
         );
         
@@ -161,8 +115,5 @@ export const useThreads = (userId?: string) => {
     fetchThreads();
   }, [userId, toast]);
 
-  return {
-    threads,
-    isLoading
-  };
+  return { threads, isLoading };
 };
