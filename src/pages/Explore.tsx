@@ -1,8 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/sidebar";
+import MainLayout from "@/components/layout/MainLayout";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, Trash2 } from "lucide-react";
 import CommunityCard from "@/components/CommunityCard";
@@ -37,7 +35,6 @@ const Explore = () => {
   const { toast } = useToast();
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   
-  // Update URL when tab changes
   useEffect(() => {
     if (activeTab === "communities") {
       searchParams.delete("tab");
@@ -47,35 +44,29 @@ const Explore = () => {
     setSearchParams(searchParams);
   }, [activeTab, searchParams, setSearchParams]);
 
-  // Update active tab when URL changes
   useEffect(() => {
     if (tabFromUrl === "my-posts") {
       setActiveTab("my-posts");
     }
   }, [tabFromUrl]);
   
-  // Filter communities based on search query
   const filteredCommunities = communities.filter(community => 
     community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (community.description && community.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (community.tags && community.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
   );
 
-  // Get only the user's threads
   const userThreads = threads.filter(thread => thread.author.id === user?.id);
   
-  // Filter user's threads based on search query
   const filteredUserThreads = userThreads.filter(thread =>
     thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     thread.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Handle thread deletion
   const handleDeleteThread = async (threadId: string) => {
     try {
       setDeletingThreadId(threadId);
       
-      // Delete the thread from Supabase
       const { error } = await supabase
         .from('threads')
         .delete()
@@ -89,7 +80,6 @@ const Explore = () => {
         description: "Your thread has been successfully deleted",
       });
       
-      // Refresh the threads list
       refreshThreads();
       
     } catch (error: any) {
@@ -104,7 +94,6 @@ const Explore = () => {
     }
   };
   
-  // Modified ThreadList to include delete buttons
   const renderThreadWithDeleteOption = () => {
     return (
       <div className="space-y-6">
@@ -165,72 +154,66 @@ const Explore = () => {
   };
   
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <div className="container flex">
-        <Sidebar />
+    <MainLayout>
+      <div className="w-full max-w-4xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6">Explore</h1>
         
-        <main className="flex-1 p-4 lg:p-6">
-          <h1 className="text-2xl font-bold mb-6">Explore</h1>
-          
-          <div className="mb-6 max-w-2xl">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={activeTab === "communities" 
-                  ? "Search communities by name, description, or tags..." 
-                  : "Search your posts..."
-                }
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+        <div className="mb-6 max-w-2xl">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={activeTab === "communities" 
+                ? "Search communities by name, description, or tags..." 
+                : "Search your posts..."
+              }
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
+        </div>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="communities">All Communities</TabsTrigger>
+            <TabsTrigger value="my-posts">My Posts</TabsTrigger>
+          </TabsList>
           
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList>
-              <TabsTrigger value="communities">All Communities</TabsTrigger>
-              <TabsTrigger value="my-posts">My Posts</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="communities">
-              {loadingCommunities ? (
-                <div className="flex justify-center items-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredCommunities.length > 0 ? (
-                    filteredCommunities.map((community) => (
-                      <CommunityCard key={community.id} community={community} />
-                    ))
-                  ) : (
-                    <div className="col-span-full text-center py-12">
-                      <h3 className="text-lg font-medium">No communities found</h3>
-                      <p className="text-muted-foreground mt-1">
-                        Try a different search term or create a new community.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="my-posts">
-              {loadingThreads ? (
-                <div className="flex justify-center items-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : (
-                renderThreadWithDeleteOption()
-              )}
-            </TabsContent>
-          </Tabs>
-        </main>
+          <TabsContent value="communities">
+            {loadingCommunities ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredCommunities.length > 0 ? (
+                  filteredCommunities.map((community) => (
+                    <CommunityCard key={community.id} community={community} />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-12">
+                    <h3 className="text-lg font-medium">No communities found</h3>
+                    <p className="text-muted-foreground mt-1">
+                      Try a different search term or create a new community.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="my-posts">
+            {loadingThreads ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              renderThreadWithDeleteOption()
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

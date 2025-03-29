@@ -13,7 +13,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <div className="flex-1 p-4 md:p-6 max-w-4xl mx-auto">
+      <div className="flex-1 w-full p-4 md:p-6 max-w-full">
         {children}
       </div>
     </div>
