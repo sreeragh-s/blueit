@@ -8,7 +8,7 @@ interface CommentsListProps {
 const CommentsList = ({ comments }: CommentsListProps) => {
   if (comments.length === 0) {
     return (
-      <div className="text-center py-6 text-muted-foreground">
+      <div className="text-center py-6 text-muted-foreground w-full">
         No comments yet. Be the first to comment!
       </div>
     );
