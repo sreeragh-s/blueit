@@ -1,4 +1,3 @@
-
 import React, { useState, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -31,8 +30,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// Define the form schema with zod
 const formSchema = z.object({
   name: z.string().min(3, {
     message: "Community name must be at least 3 characters.",
@@ -101,12 +100,10 @@ const CreateCommunityDialog = ({
     setIsSubmitting(true);
     
     try {
-      // Parse rules from text to JSON array
       const rulesArray = values.rules
         ? values.rules.split('\n').filter(rule => rule.trim().length > 0)
         : [];
       
-      // Create the community
       const { data: communityData, error: communityError } = await supabase
         .from('communities')
         .insert({
@@ -123,7 +120,6 @@ const CreateCommunityDialog = ({
         throw communityError;
       }
       
-      // Add creator as an admin
       const { error: memberError } = await supabase
         .from('community_members')
         .insert({
@@ -136,7 +132,6 @@ const CreateCommunityDialog = ({
         throw memberError;
       }
       
-      // Upload banner image if present
       let bannerUrl = null;
       if (bannerImage && communityData.id) {
         const fileExt = bannerImage.name.split('.').pop();
@@ -152,14 +147,12 @@ const CreateCommunityDialog = ({
           throw uploadError;
         }
         
-        // Get the public URL
         const { data } = supabase.storage
           .from('community_banners')
           .getPublicUrl(filePath);
         
         bannerUrl = data.publicUrl;
         
-        // Update the community with the banner URL
         const { error: updateError } = await supabase
           .from('communities')
           .update({ banner_image: bannerUrl })
@@ -200,7 +193,6 @@ const CreateCommunityDialog = ({
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Banner Image Upload */}
             <div className="space-y-2">
               <FormLabel>Community Banner</FormLabel>
               <div 
