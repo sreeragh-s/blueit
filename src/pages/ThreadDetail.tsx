@@ -1,9 +1,8 @@
 
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
-import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useThreadDetail } from "@/hooks/use-thread-detail";
 import ThreadHeader from "@/components/ThreadHeader";
@@ -14,77 +13,15 @@ import CommentsSection from "@/components/CommentsSection";
 import ThreadLoadingState from "@/components/ThreadLoadingState";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ThreadDetail = () => {
   const { threadId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [threadExists, setThreadExists] = useState<boolean | null>(null);
   
-  // Always initialize the hook, but conditionally use its result
-  const threadDetailHook = useThreadDetail(threadId || '');
-  
-  // Check if thread exists in database first
-  useEffect(() => {
-    const checkThreadExists = async () => {
-      if (!threadId) {
-        setThreadExists(false);
-        return;
-      }
-      
-      try {
-        const { data, error } = await supabase
-          .from('threads')
-          .select('id')
-          .eq('id', threadId)
-          .single();
-          
-        if (error || !data) {
-          setThreadExists(false);
-        } else {
-          setThreadExists(true);
-        }
-      } catch (error) {
-        console.error("Error checking thread:", error);
-        setThreadExists(false);
-      }
-    };
-    
-    checkThreadExists();
-  }, [threadId]);
-  
-  // Navigate away if thread doesn't exist
-  useEffect(() => {
-    if (threadExists === false) {
-      navigate('/');
-      toast({
-        title: "Invalid thread",
-        description: "The thread you're trying to view doesn't exist.",
-        variant: "destructive"
-      });
-    }
-  }, [threadExists, navigate, toast]);
-  
-  if (threadExists === null) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="container flex">
-          <Sidebar />
-          <main className="flex-1 p-4 lg:p-6 flex justify-center items-center">
-            <ThreadLoadingState />
-          </main>
-        </div>
-      </div>
-    );
-  }
-  
-  if (threadExists === false) {
-    return null; // Will redirect in useEffect
-  }
-  
+  // Initialize the hook with threadId
   const {
     thread,
     comments,
@@ -92,13 +29,26 @@ const ThreadDetail = () => {
     userVote,
     saved,
     loading,
+    exists,
     isVoting,
     isBookmarking,
     handleVote,
     handleToggleSave,
     handleShare,
     handleSubmitComment
-  } = threadDetailHook;
+  } = useThreadDetail(threadId || '');
+  
+  // Navigate away if thread doesn't exist
+  useEffect(() => {
+    if (exists === false) {
+      navigate('/');
+      toast({
+        title: "Invalid thread",
+        description: "The thread you're trying to view doesn't exist.",
+        variant: "destructive"
+      });
+    }
+  }, [exists, navigate, toast]);
   
   if (loading) {
     return (
