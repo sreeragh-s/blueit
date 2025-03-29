@@ -58,7 +58,7 @@ const CommunityCard = ({ community }: CommunityCardProps) => {
       <CardFooter className="pt-0">
         <Button asChild className="w-full">
           <Link to={`/community/${community.id}`}>
-            View Community
+            View Channel
           </Link>
         </Button>
       </CardFooter>

@@ -36,7 +36,7 @@ import { Loader2, Upload, Trash2 } from "lucide-react";
 // Define the form schema with zod
 const formSchema = z.object({
   name: z.string().min(3, {
-    message: "Community name must be at least 3 characters.",
+    message: "Channel name must be at least 3 characters.",
   }).max(50),
   description: z.string().min(10, {
     message: "Description must be at least 10 characters.",
@@ -225,9 +225,9 @@ const EditCommunityDialog = ({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Edit Community</DialogTitle>
+            <DialogTitle>Edit Channel</DialogTitle>
             <DialogDescription>
-              Update your community settings and information.
+              Update your Channel Settings and information.
             </DialogDescription>
           </DialogHeader>
           
@@ -275,7 +275,7 @@ const EditCommunityDialog = ({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Community Name</FormLabel>
+                    <FormLabel>Channel Name</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. Photography Enthusiasts" {...field} />
                     </FormControl>
@@ -313,7 +313,7 @@ const EditCommunityDialog = ({
                 name="rules"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Community Rules</FormLabel>
+                    <FormLabel>Channel Rules</FormLabel>
                     <FormControl>
                       <Textarea 
                         placeholder="Enter each rule on a new line" 
@@ -335,7 +335,7 @@ const EditCommunityDialog = ({
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">Private Community</FormLabel>
+                      <FormLabel className="text-base">Private Channel</FormLabel>
                       <FormDescription>
                         If enabled, only invited members can join and view content.
                       </FormDescription>

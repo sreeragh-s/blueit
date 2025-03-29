@@ -138,7 +138,7 @@ const Navbar = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/bookmarks')}>
+                  <DropdownMenuItem onClick={() => navigate('/saved')}>
                     <Bookmark className="mr-2 h-4 w-4" />
                     <span>Bookmarks</span>
                   </DropdownMenuItem>

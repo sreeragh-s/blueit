@@ -30,7 +30,7 @@ const CommunityActionBar = ({
             onClick={onOpenEditCommunity}
           >
             <SettingsIcon className="mr-2 h-4 w-4" />
-            Community Settings
+            Channel Settings
           </Button>
         ) : (
           <Button 

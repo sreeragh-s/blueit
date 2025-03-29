@@ -8,7 +8,7 @@ interface CommunityRulesProps {
 const CommunityRules = ({ rules }: CommunityRulesProps) => {
   return (
     <div className="bg-card rounded-lg border p-6">
-      <h2 className="text-xl font-semibold mb-4">Community Rules</h2>
+      <h2 className="text-xl font-semibold mb-4">Channel Rules</h2>
       {rules && rules.length > 0 ? (
         <ol className="list-decimal pl-5 space-y-3">
           {rules.map((rule, index) => (
