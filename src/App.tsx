@@ -13,6 +13,7 @@ import Explore from "./pages/Explore";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import SavedThreads from "./pages/SavedThreads";
+import ThreadDetail from "./pages/ThreadDetail";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/explore" element={<Explore />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/saved" element={<SavedThreads />} />
+            <Route path="/thread/:threadId" element={<ThreadDetail />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
