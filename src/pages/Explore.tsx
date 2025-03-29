@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
@@ -7,85 +7,86 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Users } from "lucide-react";
+import { Search, Users, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Community } from "@/types/supabase";
 
-// Sample communities data
-const sampleCommunities = [
-  {
-    id: 1,
-    name: "Technology",
-    description: "Discuss the latest in tech, gadgets, programming, and digital trends.",
-    memberCount: 52384,
-    bannerImage: "https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=1200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    tags: ["Tech", "Programming", "Gadgets"]
-  },
-  {
-    id: 2,
-    name: "Photography",
-    description: "Share your photos, get feedback, and discuss photography techniques.",
-    memberCount: 38762,
-    bannerImage: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=1200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    tags: ["Photos", "Cameras", "Editing"]
-  },
-  {
-    id: 3,
-    name: "Music",
-    description: "For all music lovers - discuss bands, songs, instruments, and music theory.",
-    memberCount: 67129,
-    bannerImage: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=1200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    tags: ["Artists", "Instruments", "Genres"]
-  },
-  {
-    id: 4,
-    name: "Gaming",
-    description: "Video games, board games, card games - all gaming discussions welcome!",
-    memberCount: 104782,
-    bannerImage: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    tags: ["Video Games", "Board Games", "eSports"]
-  },
-  {
-    id: 5,
-    name: "Books",
-    description: "Book recommendations, discussions, and literary analysis.",
-    memberCount: 28945,
-    bannerImage: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=1200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    tags: ["Fiction", "Non-fiction", "Reading"]
-  },
-  {
-    id: 6,
-    name: "Sports",
-    description: "All sports discussions, from professional leagues to amateur tips.",
-    memberCount: 82561,
-    bannerImage: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    tags: ["Teams", "Fitness", "Events"]
-  },
-  {
-    id: 7,
-    name: "Science",
-    description: "Explore scientific discoveries, theories, and research across all fields.",
-    memberCount: 45128,
-    bannerImage: "https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=1200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    tags: ["Research", "Space", "Biology"]
-  },
-  {
-    id: 8,
-    name: "Cooking",
-    description: "Recipes, cooking techniques, food pics, and culinary discussions.",
-    memberCount: 63472,
-    bannerImage: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
-    tags: ["Recipes", "Food", "Baking"]
-  }
-];
+interface CommunityWithMemberCount extends Community {
+  memberCount: number;
+  tags?: string[];
+}
 
 const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [communities, setCommunities] = useState(sampleCommunities);
+  const [communities, setCommunities] = useState<CommunityWithMemberCount[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    const fetchCommunities = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch all communities
+        const { data: communitiesData, error: communitiesError } = await supabase
+          .from('communities')
+          .select('*');
+        
+        if (communitiesError) throw communitiesError;
+        
+        if (!communitiesData) {
+          setCommunities([]);
+          return;
+        }
+        
+        // Process communities to include member count
+        const enhancedCommunities = await Promise.all(
+          communitiesData.map(async (community) => {
+            // Get member count
+            const { count: memberCount, error: memberCountError } = await supabase
+              .from('community_members')
+              .select('*', { count: 'exact', head: true })
+              .eq('community_id', community.id);
+            
+            if (memberCountError) {
+              console.error('Error fetching member count:', memberCountError);
+              return {
+                ...community,
+                memberCount: 0,
+                tags: ["Community"]
+              };
+            }
+            
+            return {
+              ...community,
+              memberCount: memberCount || 0,
+              tags: ["Community"] // Default tag if no tags available
+            };
+          })
+        );
+        
+        setCommunities(enhancedCommunities);
+      } catch (error) {
+        console.error('Error fetching communities:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load communities. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchCommunities();
+  }, [toast]);
   
   // Filter communities based on search query
   const filteredCommunities = communities.filter(community => 
     community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    community.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    community.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+    (community.description && community.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (community.tags && community.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
   );
   
   return (
@@ -110,58 +111,65 @@ const Explore = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCommunities.map((community) => (
-              <Card key={community.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                <div 
-                  className="h-32 w-full bg-cover bg-center"
-                  style={{ backgroundImage: `url(${community.bannerImage})` }}
-                />
-                
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex justify-between items-start">
-                    <Link 
-                      to={`/community/${community.id}`}
-                      className="hover:text-primary transition-colors"
-                    >
-                      c/{community.name}
-                    </Link>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Users size={14} className="mr-1" />
-                      {community.memberCount.toLocaleString()}
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {community.description.length > 120
-                      ? community.description.substring(0, 120) + "..."
-                      : community.description
-                    }
-                  </p>
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCommunities.map((community) => (
+                <Card key={community.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <div 
+                    className="h-32 w-full bg-cover bg-center bg-gradient-to-r from-blue-500 to-purple-500"
+                    style={community.banner_image ? { backgroundImage: `url(${community.banner_image})` } : {}}
+                  />
                   
-                  <div className="flex flex-wrap gap-2">
-                    {community.tags.map((tag, index) => (
-                      <Badge key={index} variant="outline" className="font-normal">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-                
-                <CardFooter className="pt-0">
-                  <Button asChild className="w-full">
-                    <Link to={`/community/${community.id}`}>
-                      View Community
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex justify-between items-start">
+                      <Link 
+                        to={`/community/${community.id}`}
+                        className="hover:text-primary transition-colors"
+                      >
+                        c/{community.name}
+                      </Link>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Users size={14} className="mr-1" />
+                        {community.memberCount.toLocaleString()}
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {community.description ? (
+                        community.description.length > 120
+                          ? community.description.substring(0, 120) + "..."
+                          : community.description
+                      ) : "No description available."}
+                    </p>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {community.tags && community.tags.map((tag, index) => (
+                        <Badge key={index} variant="outline" className="font-normal">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                  
+                  <CardFooter className="pt-0">
+                    <Button asChild className="w-full">
+                      <Link to={`/community/${community.id}`}>
+                        View Community
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
           
-          {filteredCommunities.length === 0 && (
+          {!loading && filteredCommunities.length === 0 && (
             <div className="text-center py-12">
               <h3 className="text-lg font-medium">No communities found</h3>
               <p className="text-muted-foreground mt-1">
