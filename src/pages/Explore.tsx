@@ -1,4 +1,6 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/sidebar";
 import { Input } from "@/components/ui/input";
@@ -8,7 +10,7 @@ import { useCommunities } from "@/hooks/use-communities";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import ThreadList from "@/components/ThreadList";
-import { useThreads } from "@/hooks/use-threads";
+import { useThreadsWithRefresh } from "@/hooks/use-threads-with-refresh";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -25,13 +27,32 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const Explore = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("communities");
+  const [activeTab, setActiveTab] = useState(tabFromUrl === "my-posts" ? "my-posts" : "communities");
   const { communities, loading: loadingCommunities } = useCommunities();
   const { user } = useAuth();
-  const { threads, isLoading: loadingThreads } = useThreads(user?.id);
+  const { threads, isLoading: loadingThreads, refreshThreads } = useThreadsWithRefresh(user?.id);
   const { toast } = useToast();
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
+  
+  // Update URL when tab changes
+  useEffect(() => {
+    if (activeTab === "communities") {
+      searchParams.delete("tab");
+    } else {
+      searchParams.set("tab", activeTab);
+    }
+    setSearchParams(searchParams);
+  }, [activeTab, searchParams, setSearchParams]);
+
+  // Update active tab when URL changes
+  useEffect(() => {
+    if (tabFromUrl === "my-posts") {
+      setActiveTab("my-posts");
+    }
+  }, [tabFromUrl]);
   
   // Filter communities based on search query
   const filteredCommunities = communities.filter(community => 
@@ -42,6 +63,12 @@ const Explore = () => {
 
   // Get only the user's threads
   const userThreads = threads.filter(thread => thread.author.id === user?.id);
+  
+  // Filter user's threads based on search query
+  const filteredUserThreads = userThreads.filter(thread =>
+    thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    thread.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   
   // Handle thread deletion
   const handleDeleteThread = async (threadId: string) => {
@@ -62,8 +89,9 @@ const Explore = () => {
         description: "Your thread has been successfully deleted",
       });
       
-      // Update the local threads state to remove the deleted thread
-      // Note: useThreads will re-fetch threads on its own, but this provides immediate UI feedback
+      // Refresh the threads list
+      refreshThreads();
+      
     } catch (error: any) {
       console.error("Error deleting thread:", error);
       toast({
@@ -80,7 +108,7 @@ const Explore = () => {
   const renderThreadWithDeleteOption = () => {
     return (
       <div className="space-y-6">
-        {userThreads.map((thread) => {
+        {filteredUserThreads.map((thread) => {
           if (!thread.id) return null;
           
           return (
@@ -124,7 +152,7 @@ const Explore = () => {
           );
         })}
         
-        {userThreads.length === 0 && !loadingThreads && (
+        {filteredUserThreads.length === 0 && !loadingThreads && (
           <div className="text-center py-12">
             <h3 className="text-lg font-medium">You haven't created any threads yet</h3>
             <p className="text-muted-foreground mt-1">

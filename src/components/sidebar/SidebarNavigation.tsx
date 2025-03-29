@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Bookmark, Compass, Home } from "lucide-react";
+import { Bookmark, Compass, Home, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const SidebarNavigation = () => {
@@ -26,12 +26,20 @@ const SidebarNavigation = () => {
           </Link>
         </Button>
         {user && (
-          <Button variant="ghost" className="w-full justify-start" asChild>
-            <Link to="/saved">
-              <Bookmark className="mr-2 h-4 w-4" />
-              Saved
-            </Link>
-          </Button>
+          <>
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/saved">
+                <Bookmark className="mr-2 h-4 w-4" />
+                Saved
+              </Link>
+            </Button>
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/explore?tab=my-posts">
+                <FileText className="mr-2 h-4 w-4" />
+                My Posts
+              </Link>
+            </Button>
+          </>
         )}
       </div>
     </div>
