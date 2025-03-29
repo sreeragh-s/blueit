@@ -38,6 +38,7 @@ const CommentCard = ({ comment, level = 0 }: CommentProps) => {
   
   const handleReplySubmitted = (reply: CommentProps["comment"]) => {
     setLocalReplies([reply, ...localReplies]);
+    setShowReplyForm(false);
   };
   
   // Limit nesting to 5 levels deep
