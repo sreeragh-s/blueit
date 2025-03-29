@@ -46,9 +46,9 @@ const Index = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden w-full">
         <MainLayout>
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 min-h-[40px]">
             <h1 className="text-2xl font-bold">Home Feed</h1>
             <Button asChild>
               <Link to="/create">

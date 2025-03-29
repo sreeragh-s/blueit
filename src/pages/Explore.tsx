@@ -46,10 +46,10 @@ const Explore = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden w-full">
         <MainLayout>
           <div className="w-full">
-            <h1 className="text-2xl font-bold mb-6">Explore</h1>
+            <h1 className="text-2xl font-bold mb-6 min-h-[40px]">Explore</h1>
             
             <SearchBar 
               searchQuery={searchQuery} 
