@@ -56,7 +56,7 @@ const Index = () => {
     const fetchThreads = async () => {
       setIsLoading(true);
       try {
-        // Get threads - using untyped query
+        // Get threads - using untyped query with type casting
         const { data: threadsData, error: threadsError } = await supabase
           .from('threads')
           .select(`
@@ -107,7 +107,7 @@ const Index = () => {
               console.error('Error fetching community data:', communityError);
             }
             
-            // Get upvotes count using untyped query
+            // Get upvotes count using untyped query with type casting
             const { count: upvotes, error: upvotesError } = await supabase
               .from('votes')
               .select('id', { count: 'exact' })
@@ -118,7 +118,7 @@ const Index = () => {
               console.error('Error counting upvotes:', upvotesError);
             }
             
-            // Get downvotes count using untyped query
+            // Get downvotes count using untyped query with type casting
             const { count: downvotes, error: downvotesError } = await supabase
               .from('votes')
               .select('id', { count: 'exact' })
@@ -129,7 +129,7 @@ const Index = () => {
               console.error('Error counting downvotes:', downvotesError);
             }
             
-            // Get comment count using untyped query
+            // Get comment count using untyped query with type casting
             const { count: commentCount, error: commentCountError } = await supabase
               .from('comments')
               .select('id', { count: 'exact' })
@@ -139,7 +139,7 @@ const Index = () => {
               console.error('Error counting comments:', commentCountError);
             }
             
-            // Get tags using untyped query
+            // Get tags using untyped query with type casting
             const { data: tagsData, error: tagsError } = await supabase
               .from('thread_tags')
               .select('tags:tag_id(name)')
@@ -150,7 +150,7 @@ const Index = () => {
             }
             
             const tags = tagsData && tagsData.length > 0
-              ? tagsData.map(tag => tag.tags?.name).filter(Boolean)
+              ? tagsData.map(tag => (tag.tags as any)?.name).filter(Boolean)
               : [];
               
             return {
@@ -164,8 +164,8 @@ const Index = () => {
                 name: authorData?.username || 'Anonymous',
                 avatar: authorData?.avatar_url
               },
-              votes: (upvotes || 0) - (downvotes || 0),
-              commentCount: commentCount || 0,
+              votes: ((upvotes || 0) - (downvotes || 0)) as number,
+              commentCount: commentCount as number || 0,
               tags: tags as string[]
             };
           })

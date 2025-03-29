@@ -23,7 +23,7 @@ export const useThread = (threadId: string) => {
 
     setIsVoting(true);
     try {
-      // Check if user has already voted using the untyped query
+      // Check if user has already voted
       const { data: existingVoteData, error: voteError } = await supabase
         .from('votes')
         .select('*')
@@ -83,7 +83,7 @@ export const useThread = (threadId: string) => {
             thread_id: threadId,
             user_id: user.id,
             vote_type: voteType
-          });
+          } as Vote);
           
         if (insertError) {
           console.error('Error creating vote:', insertError);
@@ -121,7 +121,7 @@ export const useThread = (threadId: string) => {
 
     setIsBookmarking(true);
     try {
-      // Check if already bookmarked using the untyped query
+      // Check if already bookmarked
       const { data: existingBookmarkData, error: bookmarkError } = await supabase
         .from('bookmarks')
         .select('*')
@@ -161,7 +161,7 @@ export const useThread = (threadId: string) => {
           .insert({
             thread_id: threadId,
             user_id: user.id
-          });
+          } as Bookmark);
           
         if (insertError) {
           console.error('Error adding bookmark:', insertError);
