@@ -28,7 +28,7 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
           content,
           created_at,
           user_id,
-          profiles(id, username, avatar_url)
+          profiles:user_id(id, username, avatar_url)
         `)
         .eq('thread_id', threadId)
         .is('parent_id', null) // Only get top-level comments
@@ -55,15 +55,16 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
             .eq('comment_id', comment.id)
             .eq('vote_type', 'down');
           
-          // Safely access profiles data - if it exists and has the expected structure
-          const profile = comment.profiles;
+          // Make sure we have a valid profiles object from the join
+          // The key is to use the correct path when accessing the joined profiles data
+          const authorProfile = comment.profiles || {};
           
           return {
             id: comment.id,
             content: comment.content,
             author: {
-              name: profile?.username || 'Anonymous',
-              avatar: profile?.avatar_url
+              name: authorProfile.username || 'Anonymous',
+              avatar: authorProfile.avatar_url
             },
             votes: ((upvotes || 0) - (downvotes || 0)),
             createdAt: new Date(comment.created_at).toLocaleDateString('en-US', {
