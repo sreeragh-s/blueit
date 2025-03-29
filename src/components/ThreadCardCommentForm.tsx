@@ -32,6 +32,11 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
     try {
       setIsSubmitting(true);
       
+      // Ensure threadId is a valid UUID
+      if (!threadId || !isValidUUID(threadId)) {
+        throw new Error(`Invalid thread ID format: ${threadId}`);
+      }
+      
       const { data: newComment, error } = await supabase
         .from('comments')
         .insert({
@@ -61,6 +66,12 @@ const ThreadCardCommentForm = ({ threadId, onCommentAdded }: ThreadCardCommentFo
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Helper function to validate UUID format
+  const isValidUUID = (uuid: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
   };
 
   if (!user) {

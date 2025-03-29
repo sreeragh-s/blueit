@@ -26,6 +26,12 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
   const fetchComments = async () => {
     if (!threadId) return;
     
+    // Validate UUID format before sending to Supabase
+    if (!isValidUUID(threadId)) {
+      console.error(`Invalid thread ID format: ${threadId}`);
+      return;
+    }
+    
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -91,6 +97,12 @@ const ThreadCardComments = ({ threadId, commentCount }: ThreadCardCommentsProps)
     } finally {
       setLoading(false);
     }
+  };
+  
+  // Helper function to validate UUID format
+  const isValidUUID = (uuid: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
   };
   
   useEffect(() => {
