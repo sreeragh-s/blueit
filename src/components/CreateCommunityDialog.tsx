@@ -47,7 +47,7 @@ const formSchema = z.object({
 interface CreateCommunityDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCommunityCreated?: () => Promise<void>; // Add the missing prop here with optional modifier
+  onCommunityCreated?: () => Promise<void>;
 }
 
 const CreateCommunityDialog = ({
@@ -103,6 +103,13 @@ const CreateCommunityDialog = ({
     setIsSubmitting(true);
     
     try {
+      console.log("Creating community with data:", {
+        name: values.name,
+        description: values.description,
+        is_private: values.isPrivate,
+        created_by: user.id
+      });
+      
       const rulesArray = values.rules
         ? values.rules.split('\n').filter(rule => rule.trim().length > 0)
         : [];
@@ -120,9 +127,13 @@ const CreateCommunityDialog = ({
         .single();
       
       if (communityError) {
+        console.error("Error creating community:", communityError);
         throw communityError;
       }
       
+      console.log("Community created successfully:", communityData);
+      
+      // Create member entry for creator
       const { error: memberError } = await supabase
         .from('community_members')
         .insert({
@@ -132,6 +143,7 @@ const CreateCommunityDialog = ({
         });
       
       if (memberError) {
+        console.error("Error adding member:", memberError);
         throw memberError;
       }
       
@@ -147,6 +159,7 @@ const CreateCommunityDialog = ({
           });
         
         if (uploadError) {
+          console.error("Error uploading banner:", uploadError);
           throw uploadError;
         }
         
@@ -162,6 +175,7 @@ const CreateCommunityDialog = ({
           .eq('id', communityData.id);
         
         if (updateError) {
+          console.error("Error updating banner URL:", updateError);
           throw updateError;
         }
       }
@@ -180,6 +194,7 @@ const CreateCommunityDialog = ({
       
       navigate(`/community/${communityData.id}`);
     } catch (error: any) {
+      console.error("Complete error:", error);
       toast({
         title: "Failed to Create Community",
         description: error.message || "An unexpected error occurred",

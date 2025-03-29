@@ -38,12 +38,42 @@ export function useCommunities() {
         return;
       }
       
-      // Process communities with default member counts
-      const enhancedCommunities = communitiesData.map(community => ({
-        ...community,
-        memberCount: 0, // Set default count
-        tags: community.name ? [community.name.split(' ')[0]] : ["Community"] // Simple tag extraction
-      }));
+      // Process communities with default member counts and extract tags
+      const enhancedCommunities = communitiesData.map(community => {
+        // Create tags from community name and description
+        let tags: string[] = ["Community"];
+        
+        if (community.name) {
+          // Split name and add first word as a tag
+          const nameWords = community.name.split(' ');
+          if (nameWords.length > 0) {
+            tags = [nameWords[0]];
+          }
+          
+          // Extract topic from description if available
+          if (community.description) {
+            const words = community.description.toLowerCase().split(' ');
+            const topicWords = words.filter(word => 
+              word.length > 3 && 
+              !['this', 'that', 'with', 'have', 'from', 'about', 'community'].includes(word)
+            );
+            
+            if (topicWords.length > 0) {
+              // Add first significant word from description as additional tag
+              const topicTag = topicWords[0].charAt(0).toUpperCase() + topicWords[0].slice(1);
+              if (!tags.includes(topicTag)) {
+                tags.push(topicTag);
+              }
+            }
+          }
+        }
+        
+        return {
+          ...community,
+          memberCount: 0, // Set default count
+          tags: tags
+        };
+      });
       
       setCommunities(enhancedCommunities);
       
