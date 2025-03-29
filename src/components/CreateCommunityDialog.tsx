@@ -1,3 +1,4 @@
+
 import React, { useState, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -46,11 +47,13 @@ const formSchema = z.object({
 interface CreateCommunityDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCommunityCreated?: () => Promise<void>; // Add the missing prop here with optional modifier
 }
 
 const CreateCommunityDialog = ({
   open,
   onOpenChange,
+  onCommunityCreated,
 }: CreateCommunityDialogProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -169,6 +172,12 @@ const CreateCommunityDialog = ({
       });
       
       onOpenChange(false);
+      
+      // Call the onCommunityCreated callback if provided
+      if (onCommunityCreated) {
+        await onCommunityCreated();
+      }
+      
       navigate(`/community/${communityData.id}`);
     } catch (error: any) {
       toast({
