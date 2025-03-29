@@ -17,7 +17,7 @@ const ThreadList = ({ threads }: ThreadListProps) => {
           <ThreadCard 
             key={thread.id} 
             thread={{
-              id: thread.id, // Keep as string, no conversion
+              id: parseInt(thread.id) || 0, // Convert string to number or use 0 as fallback
               title: thread.title,
               content: thread.content,
               author: {
@@ -26,7 +26,7 @@ const ThreadList = ({ threads }: ThreadListProps) => {
               },
               community: {
                 name: thread.community.name,
-                id: thread.community.id // Keep as string, no conversion
+                id: parseInt(thread.community.id) || 0 // Convert string to number or use 0 as fallback
               },
               votes: thread.votes,
               commentCount: thread.commentCount,
