@@ -14,6 +14,7 @@ import { ThreadCardProps } from "@/types/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Props {
   thread: ThreadCardProps;
@@ -23,6 +24,7 @@ interface Props {
 const ThreadCard = ({ thread, compact = false }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [commentCount, setCommentCount] = useState(thread.commentCount);
   const [showAllComments, setShowAllComments] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -127,7 +129,10 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
   }
 
   return (
-    <Card className="thread-card mb-4">
+    <Card className={cn(
+      "thread-card mb-4", 
+      isMobile ? "mx-0 my-2" : "mb-4"
+    )}>
       <CardContent className={cn("p-4", compact ? "pb-2" : "pb-4")}>
         <div className="flex items-start">
           <ThreadVoteSection threadId={threadId} initialVotes={thread.votes} />
@@ -173,3 +178,4 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
 };
 
 export default ThreadCard;
+
