@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -8,8 +9,7 @@ import {
   navigationMenuTriggerStyle
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { BotIcon, Github } from "lucide-react";
+import { BotIcon, Github, Menu, Bell, LogOut, Settings, Bookmark } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -19,38 +19,18 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Bell, Menu, LogOut, Settings, User, Bookmark } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import Sidebar from "./sidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
-  const [isMobile, setIsMobile] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
-  useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkIfMobile();
-    window.addEventListener("resize", checkIfMobile);
-    
-    return () => {
-      window.removeEventListener("resize", checkIfMobile);
-    };
-  }, []);
-  
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-    }
-  };
   
   const handleSignOut = async () => {
     await signOut();
@@ -60,19 +40,35 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
-        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden mr-2">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-[80vw] max-w-[300px]">
-            <div className="h-full py-4 overflow-auto">
-              <Sidebar className="border-0" />
-            </div>
-          </SheetContent>
-        </Sheet>
+        {isMobile ? (
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="mr-2">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-[80vw] max-w-[300px]">
+              <div className="h-full py-4 overflow-auto">
+                <Sidebar className="border-0" />
+              </div>
+            </SheetContent>
+          </Sheet>
+        ) : (
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden mr-2">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent className="h-[80vh]">
+              <div className="p-0 w-full h-full py-4 overflow-auto">
+                <Sidebar className="border-0" />
+              </div>
+            </DrawerContent>
+          </Drawer>
+        )}
         
         <div className="flex items-center gap-2 mr-4">
           <Link to="/" className="flex items-center space-x-2">
@@ -113,7 +109,7 @@ const Navbar = () => {
                 </NavigationMenuList>
               </NavigationMenu>
               
-              <Button variant="ghost" size="icon" aria-label="Notifications">
+              <Button variant="ghost" size="icon" aria-label="Notifications" className="hidden md:flex">
                 <Bell className="h-5 w-5" />
               </Button>
               

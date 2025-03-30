@@ -5,6 +5,7 @@ import { useState } from "react";
 import CreateCommunityDialog from "@/components/CreateCommunityDialog";
 import SidebarNavigation from "./SidebarNavigation";
 import SidebarCommunityList from "./SidebarCommunityList";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
   className?: string;
@@ -12,6 +13,7 @@ interface SidebarProps {
 
 const Sidebar = ({ className }: SidebarProps) => {
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const [isCreateCommunityOpen, setIsCreateCommunityOpen] = useState(false);
   
   // Content that will be shared between mobile and desktop sidebar
