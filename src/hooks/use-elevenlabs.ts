@@ -13,7 +13,7 @@ export const useElevenLabs = () => {
   
   useEffect(() => {
     // Get the API key from the environment variable
-    const key = import.meta.env.VITE_ELEVENLABS_API_KEY;
+    const key = 'sk_798f3b1da332b2611a305b7eba530342fd6290f78296d30b';
     if (key) {
       console.log("ElevenLabs API key found");
       setApiKey(key);
