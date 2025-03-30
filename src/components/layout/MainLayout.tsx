@@ -8,8 +8,6 @@ interface MainLayoutProps {
 }
 
 const MainLayout = ({ children }: MainLayoutProps) => {
-  // We'll completely remove the sidebar from MainLayout on mobile
-  // since it will be managed by the Navbar component via the Sheet/Drawer
   const isMobile = useIsMobile();
 
   return (
