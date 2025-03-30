@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ThreadActionsProps {
   saved: boolean;
@@ -35,6 +36,7 @@ const ThreadActions = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showKeyDialog, setShowKeyDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -86,7 +88,7 @@ const ThreadActions = ({
           onClick={onShare}
         >
           <Share2 size={16} />
-          <span>Share</span>
+          {!isMobile && <span>Share</span>}
         </Button>
         <Button 
           variant="ghost" 
@@ -96,7 +98,7 @@ const ThreadActions = ({
           disabled={isBookmarking}
         >
           <Bookmark size={16} />
-          <span>{saved ? "Saved" : "Save"}</span>
+          {!isMobile && <span>{saved ? "Saved" : "Save"}</span>}
         </Button>
         <Button 
           variant="ghost" 
@@ -107,7 +109,7 @@ const ThreadActions = ({
           title={!hasApiKey ? "ElevenLabs API key issue" : ""}
         >
           <Headphones size={16} />
-          <span>{isLoading ? "Loading..." : isSpeaking ? "Stop" : "Listen"}</span>
+          {!isMobile && <span>{isLoading ? "Loading..." : isSpeaking ? "Stop" : "Listen"}</span>}
         </Button>
         <Button 
           variant="ghost" 
@@ -116,7 +118,7 @@ const ThreadActions = ({
           onClick={() => !user ? setShowLoginDialog(true) : null}
         >
           <Flag size={16} />
-          <span>Report</span>
+          {!isMobile && <span>Report</span>}
         </Button>
       </div>
       
