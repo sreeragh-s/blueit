@@ -10,8 +10,6 @@ export const useThreads = (userId?: string, refreshKey?: number) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!userId) return;
-    
     const fetchThreads = async () => {
       setIsLoading(true);
       try {
@@ -128,7 +126,7 @@ export const useThreads = (userId?: string, refreshKey?: number) => {
     };
     
     fetchThreads();
-  }, [userId, refreshKey, toast]);
+  }, [refreshKey, toast]);
 
   return { threads, isLoading };
 };

@@ -16,8 +16,8 @@ const Index = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("new");
   
-  // Get threads regardless of auth status
-  const { threads, isLoading } = useThreads(user?.id);
+  // Get threads for all users, regardless of auth status
+  const { threads, isLoading } = useThreads();
   
   // Sort threads based on active tab
   const sortedThreads = [...threads].sort((a, b) => {
