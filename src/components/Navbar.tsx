@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -23,7 +22,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import Sidebar from "./sidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Navbar = () => {
@@ -40,7 +38,7 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
-        {isMobile ? (
+        {isMobile && (
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="mr-2">
@@ -54,20 +52,6 @@ const Navbar = () => {
               </div>
             </SheetContent>
           </Sheet>
-        ) : (
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden mr-2">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            </DrawerTrigger>
-            <DrawerContent className="h-[80vh]">
-              <div className="p-0 w-full h-full py-4 overflow-auto">
-                <Sidebar className="border-0" />
-              </div>
-            </DrawerContent>
-          </Drawer>
         )}
         
         <div className="flex items-center gap-2 mr-4">
