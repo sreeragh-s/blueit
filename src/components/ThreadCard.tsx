@@ -8,6 +8,7 @@ import ThreadCardHeader from "@/components/ThreadCardHeader";
 import ThreadCardBody from "@/components/ThreadCardBody";
 import ThreadActions from "@/components/ThreadActions";
 import ThreadCardComments from "@/components/ThreadCardComments";
+import ThreadVoteControls from "@/components/ThreadVoteControls";
 import ThreadVoteSection from "@/components/thread/ThreadVoteSection";
 import { useThreadSharing } from "@/utils/shareUtils";
 import { ThreadCardProps } from "@/types/supabase";
