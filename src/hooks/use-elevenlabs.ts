@@ -15,6 +15,7 @@ export const useElevenLabs = () => {
     // Get the API key from the environment variable
     const key = import.meta.env.VITE_ELEVENLABS_API_KEY;
     if (key) {
+      console.log("ElevenLabs API key found");
       setApiKey(key);
     } else {
       console.warn('ElevenLabs API key not found in environment variables.');
@@ -46,8 +47,6 @@ export const useElevenLabs = () => {
       // Create a new audio element
       const audio = new Audio();
       audioRef.current = audio;
-
-      console.log("Using API key:", apiKey.substring(0, 5) + "...");
 
       // Call ElevenLabs API
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
