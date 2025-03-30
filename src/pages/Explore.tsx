@@ -17,10 +17,14 @@ const Explore = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get("tab");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState(tabFromUrl === "my-posts" ? "my-posts" : "channels");
   const { communities, loading: loadingCommunities } = useCommunities();
   const { user } = useAuth();
   const { threads, isLoading: loadingThreads, refreshThreads } = useThreadsWithRefresh(user?.id);
+  
+  // Set default active tab to "channels" if user is not signed in or if tab is not "my-posts"
+  const [activeTab, setActiveTab] = useState(
+    user && tabFromUrl === "my-posts" ? "my-posts" : "channels"
+  );
   
   useEffect(() => {
     if (activeTab === "channels") {
@@ -32,10 +36,12 @@ const Explore = () => {
   }, [activeTab, searchParams, setSearchParams]);
 
   useEffect(() => {
-    if (tabFromUrl === "my-posts") {
+    if (user && tabFromUrl === "my-posts") {
       setActiveTab("my-posts");
+    } else {
+      setActiveTab("channels");
     }
-  }, [tabFromUrl]);
+  }, [tabFromUrl, user]);
 
   const getSearchPlaceholder = () => {
     return activeTab === "channels" 
@@ -60,7 +66,7 @@ const Explore = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
               <TabsList>
                 <TabsTrigger value="channels">All Channels</TabsTrigger>
-                <TabsTrigger value="my-posts">My Posts</TabsTrigger>
+                {user && <TabsTrigger value="my-posts">My Posts</TabsTrigger>}
               </TabsList>
               
               <TabsContent value="channels">
@@ -71,15 +77,17 @@ const Explore = () => {
                 />
               </TabsContent>
               
-              <TabsContent value="my-posts">
-                <UserPostsTab 
-                  threads={threads}
-                  loading={loadingThreads}
-                  searchQuery={searchQuery}
-                  userId={user?.id}
-                  refreshThreads={refreshThreads}
-                />
-              </TabsContent>
+              {user && (
+                <TabsContent value="my-posts">
+                  <UserPostsTab 
+                    threads={threads}
+                    loading={loadingThreads}
+                    searchQuery={searchQuery}
+                    userId={user?.id}
+                    refreshThreads={refreshThreads}
+                  />
+                </TabsContent>
+              )}
             </Tabs>
           </div>
         </MainLayout>
