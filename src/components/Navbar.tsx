@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -10,7 +9,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BotIcon } from "lucide-react";
+import { BotIcon, Github } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -82,6 +81,17 @@ const Navbar = () => {
         </div>
         
         <div className="flex items-center gap-4 ml-auto">
+          <a 
+            href="https://github.com/sreeragh-s/blueit" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="hidden md:flex"
+          >
+            <Button variant="outline" size="icon" aria-label="GitHub Repository">
+              <Github className="h-5 w-5" />
+            </Button>
+          </a>
+          
           {user ? (
             <>
               <NavigationMenu className="hidden md:block">
@@ -142,6 +152,17 @@ const Navbar = () => {
             </>
           ) : (
             <div className="flex items-center gap-2">
+              <a 
+                href="https://github.com/sreeragh-s/blueit" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="md:hidden"
+              >
+                <Button variant="outline" size="icon" aria-label="GitHub Repository">
+                  <Github className="h-5 w-5" />
+                </Button>
+              </a>
+              
               <NavigationMenu className="hidden md:block">
                 <NavigationMenuList>
                   <NavigationMenuItem>
