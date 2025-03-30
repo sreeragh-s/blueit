@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -13,17 +13,10 @@ import ThreadLoadingState from "@/components/ThreadLoadingState";
 import ThreadList from "@/components/ThreadList";
 
 const Index = () => {
-  const navigate = useNavigate();
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("new");
   
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!user && !session) {
-      navigate("/login");
-    }
-  }, [user, session, navigate]);
-  
+  // Get threads regardless of auth status
   const { threads, isLoading } = useThreads(user?.id);
   
   // Sort threads based on active tab
@@ -38,10 +31,6 @@ const Index = () => {
     }
   });
   
-  if (!user) {
-    return null; // Don't render anything if not authenticated
-  }
-  
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
@@ -50,12 +39,18 @@ const Index = () => {
         <MainLayout>
           <div className="flex justify-between items-center mb-6 min-h-[40px]">
             <h1 className="text-2xl font-bold">Home Feed</h1>
-            <Button asChild>
-              <Link to="/create">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create Thread
-              </Link>
-            </Button>
+            {user ? (
+              <Button asChild>
+                <Link to="/create">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create Thread
+                </Link>
+              </Button>
+            ) : (
+              <Button onClick={() => window.location.href = "/login"}>
+                Sign In to Create
+              </Button>
+            )}
           </div>
           
           <ThreadFilterTabs 

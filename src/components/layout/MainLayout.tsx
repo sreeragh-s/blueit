@@ -1,15 +1,12 @@
 
 import { ReactNode } from "react";
 import Sidebar from "@/components/sidebar";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
 const MainLayout = ({ children }: MainLayoutProps) => {
-  const { user } = useAuth();
-
   return (
     <div className="flex h-screen w-full overflow-hidden">
       <Sidebar />

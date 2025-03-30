@@ -14,6 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ThreadActionsProps {
   saved: boolean;
@@ -31,8 +33,11 @@ const ThreadActions = ({
   threadContent = ""
 }: ThreadActionsProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showKeyDialog, setShowKeyDialog] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { speakText, stopSpeaking, isLoading, hasApiKey, isApiKeyValid } = useElevenLabs();
 
   const handleListen = async () => {
@@ -63,6 +68,14 @@ const ThreadActions = ({
     }
   };
 
+  const handleSaveClick = () => {
+    if (!user) {
+      setShowLoginDialog(true);
+      return;
+    }
+    onToggleSave();
+  };
+
   return (
     <>
       <div className="flex items-center gap-3">
@@ -79,7 +92,7 @@ const ThreadActions = ({
           variant="ghost" 
           size="sm" 
           className={cn("flex items-center gap-1", saved ? "text-primary" : "")}
-          onClick={onToggleSave}
+          onClick={handleSaveClick}
           disabled={isBookmarking}
         >
           <Bookmark size={16} />
@@ -96,7 +109,12 @@ const ThreadActions = ({
           <Headphones size={16} />
           <span>{isLoading ? "Loading..." : isSpeaking ? "Stop" : "Listen"}</span>
         </Button>
-        <Button variant="ghost" size="sm" className="flex items-center gap-1">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="flex items-center gap-1"
+          onClick={() => !user ? setShowLoginDialog(true) : null}
+        >
           <Flag size={16} />
           <span>Report</span>
         </Button>
@@ -117,6 +135,21 @@ const ThreadActions = ({
           </Alert>
           <DialogFooter className="mt-4">
             <Button onClick={() => setShowKeyDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Login Required</DialogTitle>
+            <DialogDescription>
+              You need to be logged in to use this feature.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setShowLoginDialog(false)}>Cancel</Button>
+            <Button onClick={() => navigate('/login')}>Login</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

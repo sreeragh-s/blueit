@@ -3,11 +3,9 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   NavigationMenu,
-  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
   navigationMenuTriggerStyle
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
@@ -57,7 +55,7 @@ const Navbar = () => {
   
   const handleSignOut = async () => {
     await signOut();
-    navigate('/login');
+    navigate('/');
   };
 
   return (
@@ -144,11 +142,19 @@ const Navbar = () => {
             </>
           ) : (
             <div className="flex items-center gap-2">
-              <Button variant="ghost" onClick={() => navigate('/login')}>
+              <NavigationMenu className="hidden md:block">
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <Link to="/explore">
+                      <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                        Explore
+                      </NavigationMenuLink>
+                    </Link>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
+              <Button onClick={() => navigate('/login')}>
                 Login
-              </Button>
-              <Button onClick={() => navigate('/login?tab=signup')}>
-                Sign Up
               </Button>
             </div>
           )}

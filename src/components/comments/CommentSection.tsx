@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import CommentItem from "./CommentItem";
+import { Link } from "react-router-dom";
 
 interface CommentSectionProps {
   comments: any[];
@@ -59,10 +60,13 @@ export function CommentSection({ comments, threadId, onSubmitComment }: CommentS
             </div>
           </div>
         ) : (
-          <div className="text-center py-4 text-muted-foreground">
-            <p>
-              <a href="/login" className="text-primary hover:underline">Sign in</a> to join the conversation
+          <div className="text-center py-6">
+            <p className="text-muted-foreground mb-4">
+              Sign in to join the conversation
             </p>
+            <Button asChild>
+              <Link to="/login">Sign In</Link>
+            </Button>
           </div>
         )}
       </Card>
