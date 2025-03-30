@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useElevenLabs } from "@/hooks/use-elevenlabs";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ThreadActionsProps {
   saved: boolean;
@@ -23,7 +24,7 @@ const ThreadActions = ({
 }: ThreadActionsProps) => {
   const { toast } = useToast();
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const { speakText, stopSpeaking, isLoading } = useElevenLabs();
+  const { speakText, stopSpeaking, isLoading, hasApiKey } = useElevenLabs();
 
   const handleListen = async () => {
     if (isSpeaking) {
@@ -74,7 +75,8 @@ const ThreadActions = ({
         size="sm" 
         className={cn("flex items-center gap-1", isSpeaking ? "text-primary" : "")}
         onClick={handleListen}
-        disabled={isLoading}
+        disabled={isLoading || !hasApiKey}
+        title={!hasApiKey ? "ElevenLabs API key missing" : ""}
       >
         <Headphones size={16} />
         <span>{isSpeaking ? "Stop" : "Listen"}</span>
