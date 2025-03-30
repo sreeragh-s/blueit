@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -133,25 +134,32 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
       isMobile ? "mx-0 my-2 rounded-none border-x-0" : "mb-4"
     )}>
       <CardContent className={cn("p-4", compact ? "pb-2" : "pb-4", isMobile && "px-2")}>
-        <div className="flex items-start">
-          <ThreadVoteSection threadId={threadId} initialVotes={thread.votes} />
-          
-          <div className="flex-1">
-            <ThreadCardHeader thread={thread} />
-            <ThreadCardBody thread={thread} compact={compact} />
-          </div>
+        <div className="flex flex-col">
+          <ThreadCardHeader thread={thread} />
+          <ThreadCardBody thread={thread} compact={compact} />
         </div>
       </CardContent>
       
       <CardFooter className={cn("px-4 py-2 flex flex-col border-t bg-muted/20", isMobile && "px-2")}>
-        <div className="w-full flex justify-between">
+        <div className="w-full flex justify-between items-center mb-2">
+          {isMobile && (
+            <ThreadVoteControls 
+              votes={thread.votes} 
+              userVote={null} 
+              isVoting={false} 
+              onVote={() => {}} 
+              vertical={false} 
+            />
+          )}
+          
           <Button 
             variant="ghost" 
             size="sm" 
             className="flex items-center gap-1"
           >
             <MessageSquare size={16} />
-            <span>{commentCount} Comments</span>
+            {!isMobile && <span>{commentCount} Comments</span>}
+            {isMobile && <span>{commentCount}</span>}
           </Button>
           
           <ThreadActions 
@@ -160,6 +168,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
             onToggleSave={handleToggleSave} 
             onShare={handleShare}
             threadContent={thread.content}
+            isMobile={isMobile}
           />
         </div>
         

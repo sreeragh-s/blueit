@@ -24,6 +24,7 @@ interface ThreadActionsProps {
   onShare: () => void;
   onToggleSave: () => void;
   threadContent?: string;
+  isMobile?: boolean;
 }
 
 const ThreadActions = ({
@@ -31,12 +32,12 @@ const ThreadActions = ({
   isBookmarking,
   onShare,
   onToggleSave,
-  threadContent = ""
+  threadContent = "",
+  isMobile = false
 }: ThreadActionsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isMobile = useIsMobile();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showKeyDialog, setShowKeyDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -80,7 +81,7 @@ const ThreadActions = ({
 
   return (
     <>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1">
         <Button 
           variant="ghost" 
           size="sm" 
@@ -111,15 +112,17 @@ const ThreadActions = ({
           <Headphones size={16} />
           {!isMobile && <span>{isLoading ? "Loading..." : isSpeaking ? "Stop" : "Listen"}</span>}
         </Button>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="flex items-center gap-1"
-          onClick={() => !user ? setShowLoginDialog(true) : null}
-        >
-          <Flag size={16} />
-          {!isMobile && <span>Report</span>}
-        </Button>
+        {!isMobile && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={() => !user ? setShowLoginDialog(true) : null}
+          >
+            <Flag size={16} />
+            <span>Report</span>
+          </Button>
+        )}
       </div>
       
       <Dialog open={showKeyDialog} onOpenChange={setShowKeyDialog}>

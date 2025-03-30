@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,7 +21,7 @@ const ThreadVoteControls = ({
   return (
     <div className={cn(
       "flex items-center", 
-      vertical ? "flex-col mr-4" : "space-x-1"
+      vertical ? "flex-col mr-4" : "flex-row gap-2"
     )}>
       <Button 
         variant="ghost" 
