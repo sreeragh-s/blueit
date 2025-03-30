@@ -32,9 +32,7 @@ export const useElevenLabs = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Using XI-API-KEY as a query parameter for this example, but in production
-          // you should use env variables or a backend function to protect your API key
-          'xi-api-key': 'demo' // Using demo key for limited functionality
+          'xi-api-key': import.meta.env.VITE_ELEVENLABS_API_KEY || ''
         },
         body: JSON.stringify({
           text,
@@ -66,7 +64,7 @@ export const useElevenLabs = () => {
       console.error('Error during text-to-speech:', error);
       toast({
         title: "Text-to-speech failed",
-        description: "Failed to convert text to speech. Using demo version with limited functionality.",
+        description: "Failed to convert text to speech. Please check your API key and try again.",
         variant: "destructive"
       });
       return false;

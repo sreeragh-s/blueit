@@ -4,6 +4,7 @@ import { Share2, Bookmark, Flag, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useElevenLabs } from "@/hooks/use-elevenlabs";
+import { useToast } from "@/hooks/use-toast";
 
 interface ThreadActionsProps {
   saved: boolean;
@@ -20,8 +21,9 @@ const ThreadActions = ({
   onToggleSave,
   threadContent = ""
 }: ThreadActionsProps) => {
+  const { toast } = useToast();
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const { speakText, stopSpeaking } = useElevenLabs();
+  const { speakText, stopSpeaking, isLoading } = useElevenLabs();
 
   const handleListen = async () => {
     if (isSpeaking) {
@@ -30,11 +32,20 @@ const ThreadActions = ({
       return;
     }
 
-    if (!threadContent) return;
+    if (!threadContent) {
+      toast({
+        title: "No content to read",
+        description: "This thread doesn't have any content to read aloud.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsSpeaking(true);
-    await speakText(threadContent);
-    setIsSpeaking(false);
+    const success = await speakText(threadContent);
+    if (!success) {
+      setIsSpeaking(false);
+    }
   };
 
   return (
@@ -63,6 +74,7 @@ const ThreadActions = ({
         size="sm" 
         className={cn("flex items-center gap-1", isSpeaking ? "text-primary" : "")}
         onClick={handleListen}
+        disabled={isLoading}
       >
         <Headphones size={16} />
         <span>{isSpeaking ? "Stop" : "Listen"}</span>
