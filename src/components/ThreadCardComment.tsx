@@ -271,8 +271,8 @@ const ThreadCardComment = ({
               </Button>
             </div>
             
-            {/* Only show Reply button if we haven't reached max nesting */}
-            {canNestFurther && (
+            {/* Only show Reply button if user is signed in and we haven't reached max nesting */}
+            {user && canNestFurther && (
               <Button 
                 variant="ghost" 
                 size="sm" 

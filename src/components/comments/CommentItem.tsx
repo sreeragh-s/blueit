@@ -83,6 +83,7 @@ const CommentItem = ({ comment, threadId, level = 0 }: CommentItemProps) => {
               </Button>
             </div>
             
+            {/* Only show Reply button if user is signed in and we haven't reached max nesting */}
             {user && level < maxLevel && (
               <Button 
                 variant="ghost" 
