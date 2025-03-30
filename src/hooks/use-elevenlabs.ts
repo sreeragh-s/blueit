@@ -8,6 +8,7 @@ export const useElevenLabs = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [apiKey, setApiKey] = useState<string>("");
+  const [apiKeyValid, setApiKeyValid] = useState<boolean | null>(null);
   
   // Default voice ID for ElevenLabs (Sarah voice)
   const voiceId = "EXAVITQu4vr4xnSDxMaL"; 
@@ -21,6 +22,7 @@ export const useElevenLabs = () => {
         if (viteKey) {
           setApiKey(viteKey);
           console.log("ElevenLabs API key loaded from environment");
+          await validateApiKey(viteKey);
           return;
         }
         
@@ -36,16 +38,46 @@ export const useElevenLabs = () => {
         if (data && data.value) {
           setApiKey(data.value);
           console.log("ElevenLabs API key loaded from Supabase");
+          await validateApiKey(data.value);
         } else {
           throw new Error("API key is empty or not found");
         }
       } catch (error) {
         console.error('Failed to load ElevenLabs API key:', error);
+        setApiKeyValid(false);
         toast({
-          title: "API Key Missing",
-          description: "ElevenLabs API key is not configured. Please add your API key in project settings.",
+          title: "API Key Issue",
+          description: "ElevenLabs API key is invalid or not properly configured.",
           variant: "destructive"
         });
+      }
+    };
+    
+    const validateApiKey = async (key: string) => {
+      try {
+        // Call ElevenLabs API to validate the key
+        const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+          method: 'GET',
+          headers: {
+            'xi-api-key': key
+          }
+        });
+        
+        if (response.ok) {
+          console.log("ElevenLabs API key is valid");
+          setApiKeyValid(true);
+        } else {
+          console.error("ElevenLabs API key is invalid:", await response.text());
+          setApiKeyValid(false);
+          toast({
+            title: "Invalid API Key",
+            description: "The ElevenLabs API key is invalid. Please check and update your API key.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error("Error validating ElevenLabs API key:", error);
+        setApiKeyValid(false);
       }
     };
     
@@ -66,6 +98,15 @@ export const useElevenLabs = () => {
         toast({
           title: "API key missing",
           description: "ElevenLabs API key is not configured. Please add your API key to continue.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      if (apiKeyValid === false) {
+        toast({
+          title: "Invalid API key",
+          description: "The ElevenLabs API key is invalid. Please check and update your API key.",
           variant: "destructive"
         });
         return false;
@@ -100,7 +141,18 @@ export const useElevenLabs = () => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         console.error("ElevenLabs API error:", response.status, errorData);
-        throw new Error(`Failed to convert text to speech (Status: ${response.status})`);
+        
+        if (response.status === 401) {
+          setApiKeyValid(false);
+          toast({
+            title: "Authentication error",
+            description: "Your ElevenLabs API key is invalid or has expired. Please update your API key.",
+            variant: "destructive"
+          });
+        } else {
+          throw new Error(`Failed to convert text to speech (Status: ${response.status})`);
+        }
+        return false;
       }
 
       const blob = await response.blob();
@@ -132,6 +184,7 @@ export const useElevenLabs = () => {
     speakText,
     stopSpeaking,
     isLoading,
-    hasApiKey: !!apiKey
+    hasApiKey: !!apiKey && apiKeyValid !== false,
+    isApiKeyValid: apiKeyValid
   };
 };

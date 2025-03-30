@@ -6,6 +6,14 @@ import { useState } from "react";
 import { useElevenLabs } from "@/hooks/use-elevenlabs";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ThreadActionsProps {
   saved: boolean;
@@ -24,7 +32,8 @@ const ThreadActions = ({
 }: ThreadActionsProps) => {
   const { toast } = useToast();
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const { speakText, stopSpeaking, isLoading, hasApiKey } = useElevenLabs();
+  const [showKeyDialog, setShowKeyDialog] = useState(false);
+  const { speakText, stopSpeaking, isLoading, hasApiKey, isApiKeyValid } = useElevenLabs();
 
   const handleListen = async () => {
     if (isSpeaking) {
@@ -42,6 +51,11 @@ const ThreadActions = ({
       return;
     }
 
+    if (isApiKeyValid === false) {
+      setShowKeyDialog(true);
+      return;
+    }
+
     setIsSpeaking(true);
     const success = await speakText(threadContent);
     if (!success) {
@@ -50,42 +64,63 @@ const ThreadActions = ({
   };
 
   return (
-    <div className="flex items-center gap-3">
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        className="flex items-center gap-1"
-        onClick={onShare}
-      >
-        <Share2 size={16} />
-        <span>Share</span>
-      </Button>
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        className={cn("flex items-center gap-1", saved ? "text-primary" : "")}
-        onClick={onToggleSave}
-        disabled={isBookmarking}
-      >
-        <Bookmark size={16} />
-        <span>{saved ? "Saved" : "Save"}</span>
-      </Button>
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        className={cn("flex items-center gap-1", isSpeaking ? "text-primary" : "")}
-        onClick={handleListen}
-        disabled={isLoading || !hasApiKey}
-        title={!hasApiKey ? "ElevenLabs API key missing" : ""}
-      >
-        <Headphones size={16} />
-        <span>{isLoading ? "Loading..." : isSpeaking ? "Stop" : "Listen"}</span>
-      </Button>
-      <Button variant="ghost" size="sm" className="flex items-center gap-1">
-        <Flag size={16} />
-        <span>Report</span>
-      </Button>
-    </div>
+    <>
+      <div className="flex items-center gap-3">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="flex items-center gap-1"
+          onClick={onShare}
+        >
+          <Share2 size={16} />
+          <span>Share</span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className={cn("flex items-center gap-1", saved ? "text-primary" : "")}
+          onClick={onToggleSave}
+          disabled={isBookmarking}
+        >
+          <Bookmark size={16} />
+          <span>{saved ? "Saved" : "Save"}</span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className={cn("flex items-center gap-1", isSpeaking ? "text-primary" : "")}
+          onClick={handleListen}
+          disabled={isLoading}
+          title={!hasApiKey ? "ElevenLabs API key issue" : ""}
+        >
+          <Headphones size={16} />
+          <span>{isLoading ? "Loading..." : isSpeaking ? "Stop" : "Listen"}</span>
+        </Button>
+        <Button variant="ghost" size="sm" className="flex items-center gap-1">
+          <Flag size={16} />
+          <span>Report</span>
+        </Button>
+      </div>
+      
+      <Dialog open={showKeyDialog} onOpenChange={setShowKeyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>API Key Invalid</DialogTitle>
+            <DialogDescription>
+              The ElevenLabs API key is invalid or has expired. To use the Listen feature, please add a valid API key in the project settings.
+            </DialogDescription>
+          </DialogHeader>
+          <Alert className="mt-4">
+            <AlertDescription>
+              Please check your API key format and ensure it's correctly entered in the Supabase secrets.
+            </AlertDescription>
+          </Alert>
+          <DialogFooter className="mt-4">
+            <Button onClick={() => setShowKeyDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
