@@ -16,7 +16,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     <div className="flex h-screen w-full overflow-hidden">
       {/* Sidebar is only rendered in desktop view */}
       {!isMobile && <Sidebar />}
-      <div className="flex-1 w-full p-4 md:p-6 overflow-y-auto">
+      <div className={`flex-1 w-full ${isMobile ? 'p-1' : 'p-4 md:p-6'} overflow-y-auto`}>
         <div className="w-full max-w-full mx-auto">
           {children}
         </div>

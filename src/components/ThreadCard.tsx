@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -130,10 +129,10 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
 
   return (
     <Card className={cn(
-      "thread-card mb-4", 
-      isMobile ? "mx-0 my-2" : "mb-4"
+      "thread-card", 
+      isMobile ? "mx-0 my-2 rounded-none border-x-0" : "mb-4"
     )}>
-      <CardContent className={cn("p-4", compact ? "pb-2" : "pb-4")}>
+      <CardContent className={cn("p-4", compact ? "pb-2" : "pb-4", isMobile && "px-2")}>
         <div className="flex items-start">
           <ThreadVoteSection threadId={threadId} initialVotes={thread.votes} />
           
@@ -144,7 +143,7 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
         </div>
       </CardContent>
       
-      <CardFooter className="px-4 py-2 flex flex-col border-t bg-muted/20">
+      <CardFooter className={cn("px-4 py-2 flex flex-col border-t bg-muted/20", isMobile && "px-2")}>
         <div className="w-full flex justify-between">
           <Button 
             variant="ghost" 
@@ -178,4 +177,3 @@ const ThreadCard = ({ thread, compact = false }: Props) => {
 };
 
 export default ThreadCard;
-
