@@ -1,6 +1,8 @@
 
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThreadCardProps } from "@/types/supabase";
+import { useState } from "react";
 
 interface ThreadCardBodyProps {
   thread: ThreadCardProps;
@@ -8,18 +10,35 @@ interface ThreadCardBodyProps {
 }
 
 const ThreadCardBody = ({ thread, compact = false }: ThreadCardBodyProps) => {
+  const [showFullContent, setShowFullContent] = useState(false);
+  
   if (compact) {
     return null;
   }
+  
+  const isContentTruncated = thread.content && thread.content.length > 200;
+  const displayContent = showFullContent 
+    ? thread.content 
+    : isContentTruncated 
+      ? thread.content.substring(0, 200) + "..." 
+      : thread.content;
   
   return (
     <>
       <div className="mb-3">
         <p className="text-foreground/90">
-          {thread.content.length > 200 
-            ? thread.content.substring(0, 200) + "..." 
-            : thread.content}
+          {displayContent}
         </p>
+        
+        {isContentTruncated && (
+          <Button
+            variant="link"
+            className="px-0 h-auto text-primary"
+            onClick={() => setShowFullContent(!showFullContent)}
+          >
+            {showFullContent ? "Show less" : "Show more"}
+          </Button>
+        )}
       </div>
       
       {thread.tags && thread.tags.length > 0 && (

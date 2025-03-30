@@ -1,6 +1,8 @@
 
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ThreadWithRelations } from "@/types/supabase";
 
 interface ThreadContentProps {
@@ -8,10 +10,16 @@ interface ThreadContentProps {
 }
 
 const ThreadContent = ({ thread }: ThreadContentProps) => {
+  const [showFullContent, setShowFullContent] = useState(true);
+  
   const formatContent = (content: string) => {
     if (!content) return [];
     
-    return content.split('\n\n').map((paragraph, idx) => (
+    // For thread detail view, we'll still format with paragraphs
+    // but potentially limit the content if it's very long
+    const contentToFormat = content;
+    
+    return contentToFormat.split('\n\n').map((paragraph, idx) => (
       <p key={idx} className="mb-4">
         {paragraph.split('\n').map((line, lineIdx) => (
           <span key={lineIdx}>
@@ -22,6 +30,13 @@ const ThreadContent = ({ thread }: ThreadContentProps) => {
       </p>
     ));
   };
+
+  // Calculate if content is long enough to truncate
+  // In thread detail view, we'll use a higher threshold
+  const isContentLong = thread.content && thread.content.length > 800;
+  const contentToDisplay = showFullContent || !isContentLong 
+    ? thread.content 
+    : thread.content.substring(0, 800) + "...";
 
   return (
     <div className="flex-1">
@@ -39,7 +54,17 @@ const ThreadContent = ({ thread }: ThreadContentProps) => {
       <h1 className="text-2xl font-bold mb-4">{thread.title}</h1>
       
       <div className="mb-4">
-        {formatContent(thread.content)}
+        {formatContent(contentToDisplay)}
+        
+        {isContentLong && (
+          <Button
+            variant="link"
+            className="px-0 h-auto text-primary"
+            onClick={() => setShowFullContent(!showFullContent)}
+          >
+            {showFullContent ? "Show less" : "Show more"}
+          </Button>
+        )}
       </div>
       
       {thread.tags && thread.tags.length > 0 && (
