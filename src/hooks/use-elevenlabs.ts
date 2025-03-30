@@ -1,6 +1,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useElevenLabs = () => {
   const { toast } = useToast();
@@ -12,20 +13,44 @@ export const useElevenLabs = () => {
   const voiceId = "EXAVITQu4vr4xnSDxMaL"; 
   
   useEffect(() => {
-    // Get the API key from the environment variable
-    const key = import.meta.env.VITE_ELEVENLABS_API_KEY;
-    if (key) {
-      setApiKey(key);
-      console.log("ElevenLabs API key successfully loaded");
-    } else {
-      console.warn('ElevenLabs API key not found in environment variables.');
-      toast({
-        title: "API Key Missing",
-        description: "ElevenLabs API key is not configured. Please add your API key in project settings.",
-        variant: "destructive"
-      });
-    }
-  }, []);
+    const fetchApiKey = async () => {
+      try {
+        // First try to get the API key from the environment variable
+        const viteKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
+        
+        if (viteKey) {
+          setApiKey(viteKey);
+          console.log("ElevenLabs API key loaded from environment");
+          return;
+        }
+        
+        // If not found in env, try to get from Supabase
+        const { data, error } = await supabase.functions.invoke('get-secret', {
+          body: { secretName: 'ELEVENLABS_API_KEY' }
+        });
+        
+        if (error) {
+          throw new Error(`Error fetching API key: ${error.message}`);
+        }
+        
+        if (data && data.value) {
+          setApiKey(data.value);
+          console.log("ElevenLabs API key loaded from Supabase");
+        } else {
+          throw new Error("API key is empty or not found");
+        }
+      } catch (error) {
+        console.error('Failed to load ElevenLabs API key:', error);
+        toast({
+          title: "API Key Missing",
+          description: "ElevenLabs API key is not configured. Please add your API key in project settings.",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    fetchApiKey();
+  }, [toast]);
 
   const stopSpeaking = () => {
     if (audioRef.current) {

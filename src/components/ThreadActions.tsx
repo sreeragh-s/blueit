@@ -79,7 +79,7 @@ const ThreadActions = ({
         title={!hasApiKey ? "ElevenLabs API key missing" : ""}
       >
         <Headphones size={16} />
-        <span>{isSpeaking ? "Stop" : "Listen"}</span>
+        <span>{isLoading ? "Loading..." : isSpeaking ? "Stop" : "Listen"}</span>
       </Button>
       <Button variant="ghost" size="sm" className="flex items-center gap-1">
         <Flag size={16} />
