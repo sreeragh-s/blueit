@@ -16,8 +16,14 @@ export const useElevenLabs = () => {
     const key = import.meta.env.VITE_ELEVENLABS_API_KEY;
     if (key) {
       setApiKey(key);
+      console.log("ElevenLabs API key successfully loaded");
     } else {
       console.warn('ElevenLabs API key not found in environment variables.');
+      toast({
+        title: "API Key Missing",
+        description: "ElevenLabs API key is not configured. Please add your API key in project settings.",
+        variant: "destructive"
+      });
     }
   }, []);
 
