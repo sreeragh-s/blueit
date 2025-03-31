@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Share2, Bookmark, Flag, Headphones } from "lucide-react";
+import { Share2, Bookmark, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useElevenLabs } from "@/hooks/use-elevenlabs";
@@ -112,17 +112,6 @@ const ThreadActions = ({
           <Headphones size={16} />
           {!isMobile && <span>{isLoading ? "Loading..." : isSpeaking ? "Stop" : "Listen"}</span>}
         </Button>
-        {!isMobile && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="flex items-center gap-1"
-            onClick={() => !user ? setShowLoginDialog(true) : null}
-          >
-            <Flag size={16} />
-            <span>Report</span>
-          </Button>
-        )}
       </div>
       
       <Dialog open={showKeyDialog} onOpenChange={setShowKeyDialog}>
